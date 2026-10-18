@@ -77,7 +77,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Source: every name and version exists on PyPI.
 - Findings: none
 - Action: none needed
-- Changes: api/pyproject.toml, api/uv.lock (commit filled in at end of phase)
+- Changes: api/pyproject.toml, api/uv.lock (20eda4e)
 - Notes: Called in parallel with T-008, as the workflow allows.
 
 ### T-008 | 2026-10-18T06:37Z | phase 3
@@ -110,7 +110,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: New relative to T-002/T-003: `sql-injection` (critical), `exposed-data-store`, `sensitive-data-unencrypted`, `weak-crypto-algorithms`, `weak-random-generator`, `email-abuse`, `email-header-injection`, `over-privileged-db-account`, `secrets-in-logs`, `missing-security-headers`, `enforce-flow-order`. I believe two entries are wrong for this task. `card-data-in-your-systems` (critical, with the `hosted-payment-fields` countermeasure) appears although no payment component or `payments` data was given; Taskboard handles no card data. `nosql-injection` appears although the only database is PostgreSQL. Both are recorded as false positives.
 - Findings: F-054 to F-064
 - Action: applied; countermeasures built into the API code in this phase. The false positives were rejected.
-- Changes: api/ (commit filled in at end of phase)
+- Changes: api/ (20eda4e)
 - Notes: Called in parallel with T-011.
 
 ### T-011 | 2026-10-18T06:40Z | phase 3
@@ -121,7 +121,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: New relative to T-003: `public-bucket`, `long-lived-storage-credentials`, `untrusted-job-payload`, `runaway-retries` (with `bounded-retries`, `validate-job-input`, `private-storage-signed-urls`, `short-lived-scoped-credentials`). Inferred: `long-lived-storage-credentials` does not apply, because no storage credentials reach a client: the browser never talks to S3, and the API uses the EC2 instance role. Instead of signed URLs, downloads stream through the API and UI so authorization runs on every download. The bucket stays private. `metadata.also_consider_total` is 13, but only 8 items are listed. That looks like a count of items before de-duplication; it is noted, not acted on.
 - Findings: F-065 to F-068
 - Action: applied
-- Changes: api/ (commit filled in at end of phase)
+- Changes: api/ (20eda4e)
 - Notes: none
 
 ### T-012 | 2026-10-18T06:45Z | phase 3
@@ -153,9 +153,9 @@ Times are UTC from `date -u` at the time of the entry.
 - Output: evaluation/raw/T-014.output.json. Summary: no findings; a `review_prompt`, a 16-item `security_checklist` and 12 `focus_areas` for me to review my own code against. Risk level `critical`.
 - Interpretation: The tool does not see the code. Following its prompt, I reviewed `api/src/taskboard` (baseline commit) item by item. The produced review, as a separate step, is in evaluation/raw/T-014.review.md: verdict "Needs Attention", 5 issues (R14-1 to R14-5), checklist results per item. The checklist again includes the payment item (`hosted-payment-fields`) and NoSQL focus area that do not apply (see T-010).
 - Findings: F-070, F-071, F-074, F-075, F-078
-- Action: applied (fix commits listed against each finding)
-- Changes: see findings
-- Notes: Called in parallel with T-015.
+- Action: applied
+- Changes: F-070 ff86f21; F-071 f0784c3 + cd644cf; F-074 5f3c954; F-075 66a03ee; F-078 7c5540e
+- Notes: Called in parallel with T-015. Process slip: commit f0784c3 was made while its new integration test was failing. My commit chain piped pytest through `tail`, which hid the non-zero exit code. The failure was a wrong test expectation (the removed docs route returns 404, not 401); cd644cf fixed the test. Later commit chains check pytest's exit status directly.
 
 ### T-015 | 2026-10-18T07:05Z | phase 3
 - Source: MCP sec-review/general_verify_code_security
@@ -165,7 +165,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Following the prompt, I reviewed the attachment and webhook code; the produced review is in evaluation/raw/T-015.review.md: "Needs Attention", 3 issues (R15-1 to R15-3), plus an accepted deviation on the file-type allow-list (brief requires any type) and one on separate-domain serving.
 - Findings: F-072, F-073, F-077, F-079
 - Action: applied (F-079 accepted)
-- Changes: see findings
+- Changes: F-072/F-073 1166fa7; F-077 02101da
 - Notes: none
 
 ### T-016 | 2026-10-18T07:06Z | phase 3
@@ -176,5 +176,5 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: While writing `ProjectService` I noticed every team member would receive the project's `webhook_url`, which often embeds a secret. I added redaction for anyone other than the team owner and admins, applied in `ProjectService` and `TeamService.get_team`. Also while coding: inline suppressions I had drafted (`# noqa: S101`, `# type: ignore`, `# pragma: no cover`) were all replaced with code that satisfies the rules, so `evaluation/suppressions.md` is unchanged. Alembic's `fileConfig` disabled every existing logger when migrations ran in-process, which would have silenced security logging in tests. Fixed with `disable_existing_loggers=False` in `migrations/env.py`.
 - Findings: F-069
 - Action: applied
-- Changes: api/ (baseline commit, filled in below)
+- Changes: api/ (baseline 20eda4e)
 - Notes: none
