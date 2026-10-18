@@ -38,7 +38,20 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Check scan target exists
+        id: target
+        env:
+          SCAN_PATH: ${{ matrix.target.path }}
+        run: |
+          if [ -d "$SCAN_PATH" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$SCAN_PATH does not exist yet; skipping this scan"
+          fi
+
       - name: Run Semgrep
+        if: steps.target.outputs.present == 'true'
         env:
           # Space-separated rule sets; semgrep reads this when --config is not given.
           SEMGREP_RULES: ${{ matrix.target.rules }}
@@ -46,7 +59,7 @@ jobs:
         run: semgrep scan --metrics off --sarif --output semgrep.sarif "$SEMGREP_PATH"
 
       - name: Upload SARIF to code scanning
-        if: always()
+        if: always() && steps.target.outputs.present == 'true'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif

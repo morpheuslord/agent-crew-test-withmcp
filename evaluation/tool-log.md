@@ -68,3 +68,47 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied. The first draft used an inline `# shellcheck disable=SC2086` comment; I replaced it with Semgrep's `SEMGREP_RULES` environment variable so no suppression was added.
 - Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml, docs/DECISIONS.md ADR-016 (833373a)
 - Notes: Section 10 still applies: I do not read scanner results, and the three original scanner files are unchanged. The `infra/` jobs have nothing to scan until phase 6 lands.
+
+### T-007 | 2026-10-18T06:37Z | phase 3
+- Source: MCP sec-review/sca_verify_packages
+- Why: Server workflow step 2 (adding dependencies): confirm the 20 direct Python packages and pinned versions for the API exist before writing code that uses them. Versions are the latest on PyPI, looked up with the PyPI JSON API.
+- Input: evaluation/raw/T-007.input.json (the arguments were sent as a JSON array string; saved here as parsed JSON)
+- Output: `{"all_valid": true, "packages_checked": 20}` (evaluation/raw/T-007.output.json)
+- Interpretation: Source: every name and version exists on PyPI.
+- Findings: none
+- Action: none needed
+- Changes: api/pyproject.toml, api/uv.lock (commit filled in at end of phase)
+- Notes: Called in parallel with T-008, as the workflow allows.
+
+### T-008 | 2026-10-18T06:37Z | phase 3
+- Source: MCP sec-review/sca_scan_dependencies
+- Why: Server workflow step 2: CVE scan of the new direct Python dependencies.
+- Input: evaluation/raw/T-008.input.json
+- Output: `{"packages_scanned": 20, "vulnerable_count": 0, "status": "clean", "message": "No known vulnerabilities found in scanned packages."}` (evaluation/raw/T-008.output.json)
+- Interpretation: Source: no OSV advisories for these exact versions. Inferred: transitive dependencies were not covered, because the tool scans only what it is given, so I scanned the resolved lockfile set next (T-009).
+- Findings: none
+- Action: none needed
+- Changes: none
+- Notes: none
+
+### T-009 | 2026-10-18T06:39Z | phase 3
+- Source: MCP sec-review/sca_scan_dependencies
+- Why: Cover the 48 transitive packages that `uv lock` resolved (69 total, minus the project itself and the 20 direct ones).
+- Input: evaluation/raw/T-009.input.json (versions taken from `uv export --all-groups`)
+- Output: `{"packages_scanned": 48, "vulnerable_count": 0, "status": "clean", "message": "No known vulnerabilities found in scanned packages."}` (evaluation/raw/T-009.output.json)
+- Interpretation: Source: no known advisories for the full resolved API dependency set.
+- Findings: none
+- Action: none needed
+- Changes: none
+- Notes: none
+
+### T-012 | 2026-10-18T06:45Z | phase 3
+- Source: Self (user relayed a Semgrep workflow failure in chat)
+- Why: The user pasted the Semgrep `terraform` job log: `semgrep scan --metrics off --sarif --output semgrep.sarif "$SEMGREP_PATH"` with `SEMGREP_PATH: infra`, `Error: Process completed with exit code 2.`
+- Input: the pasted log excerpt (user chat)
+- Output: n/a
+- Interpretation: Semgrep exit code 2 is a fatal error. Inferred cause: `infra/` does not exist until phase 6, so the scan target is missing. The Trivy `terraform` job (`scan-ref: infra`) has the same problem.
+- Findings: none
+- Action: applied. Both workflows now check that the target directory exists, skip the scan and the SARIF upload with a `::notice::` if it does not, and run normally once it does.
+- Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml (commit filled in below)
+- Notes: The fix is based on the job log the user shared. I did not read any scan results.
