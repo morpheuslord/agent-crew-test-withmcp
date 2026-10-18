@@ -157,5 +157,11 @@ Short ADR-style records. "Driven by" says where the decision came from: the brie
   above 60 runs. `.codacy.yml` also excludes generated output and lockfiles.
 - **Reason:** Code scanning rejected the upload with "rejecting SARIF, as there are more runs than allowed
   (24 > 20)". The upload log also warned about inconsistent fingerprints for Codacy results.
-- **Driven by:** User instruction in chat (2026-10-18) to correct the Codacy configuration, overriding the brief's
-  rule that these files are never modified.
+- **Follow-up:** after the split upload worked, the user asked to "reduce it to have only usable stuff". The prepare
+  step now keeps only the Codacy tools that apply to this stack and run cleanly here, listed in `CODACY_TOOLS`:
+  bandit, checkov, lizard, opengrep, prospector, pylint, pylintpython3, ruff, spectral. Dropped: agentlinter,
+  biome, eslint-9, jacksonlinter, jshint, markdownlint, oxlint, pmd, pmd-7, remark-lint. These reported execution
+  errors in code scanning. TypeScript is still linted (ESLint + typescript-eslint) and type-checked in `ci.yml`, and
+  CodeQL, Semgrep and Trivy cover the JavaScript/TypeScript code.
+- **Driven by:** User instructions in chat (2026-10-18) to correct the Codacy configuration and then to reduce it to
+  usable tools, overriding the brief's rule that these files are never modified.

@@ -187,7 +187,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: The one new requirement relevant to caching is `unsafe-deserialization` (critical): cache values must not use pickle or other code-executing formats, so values are JSON via Pydantic `TypeAdapter`. Most of the rest repeats earlier entries. I believe several entries do not apply to this task: `card-data-in-your-systems`/`hosted-payment-fields` (no payments, as in T-010), `weak-password-storage`, `archive-path-traversal` and `xxe` (the cache layer touches no passwords, archives or XML). The threat list did not tie itself to the components I gave, so it reads as a generic list for the component set.
 - Findings: F-084
 - Action: applied (JSON-only cache values)
-- Changes: api/ cache layer (commit filled in below)
+- Changes: api/ cache layer (01111f5)
 - Notes: Logged after T-018 in time order. The call was made before the user's Codacy message arrived, and the T-018 work was done in between.
 
 ### T-018 | 2026-10-18T07:35Z | phase 4
@@ -211,3 +211,14 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied (F-080 fixed; F-081 accepted; F-082/F-083 in phase 6)
 - Changes: see findings
 - Notes: The checklist again lists the payment, archive and XML items that do not apply.
+
+### T-020 | 2026-10-18T08:05Z | phase 4
+- Source: Self (user screenshots of the code scanning tool status page, plus "codacy issue is still not fixed" and then "or else reduce it to have only usable stuff")
+- Why: The first screenshot still showed every Codacy tool red with "Last scan 1 hour ago". The second (after the run for 1afcf28 finished) showed "Last scan now", with Bandit, Checkov, Lizard, Opengrep, Prospector, Pylint, Pylintpython3, Ruff and Spectral green. Agentlinter, Biome, Eslint-9, Jacksonlinter, Jshint, Markdownlint, Oxlint, Pmd, Pmd-7 and Remark-lint were still red.
+- Input: screenshots and messages (user chat). I also read workflow run status metadata (not results) from the public Actions API: `GET /repos/morpheuslord/agent-crew-test-withmcp/actions/workflows/codacy.yml/runs`, which showed the run for 1afcf28 `completed success` at 2026-10-18T07:12:26Z, after failures for 97c3111, 1e90c2b and c606b6b.
+- Output: `CODACY_TOOLS` allow-list in `.github/workflows/codacy.yml`.
+- Interpretation: Source: the split upload from T-018 works, since the run succeeded and the tools refreshed. Inferred: the remaining red tools report execution errors because they do not apply to this stack or cannot run in this setup. Following the user's instruction, only the 9 working tools are uploaded. Tested in an `alpine:3.22` container with jq 1.8.2 against a synthetic 24-run SARIF: 9 runs kept with stable categories, 1 upload file; an empty allow-list result produces no files and no error.
+- Findings: none
+- Action: applied
+- Changes: .github/workflows/codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md (commit filled in below)
+- Notes: The tool entries for the dropped tools will stay in the tool status page as stale configurations until someone deletes them there. I cannot do that without the code scanning API, which the brief rules out, so I told the user.

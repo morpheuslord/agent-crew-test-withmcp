@@ -32,14 +32,27 @@ jobs:
           gh-code-scanning-compat: true
           max-allowed-issues: 2147483647
 
-      # Code scanning accepts at most 20 runs per SARIF upload, and Codacy emits one run per tool
-      # (24 at the time of writing). Give each run a stable category of its own, drop Codacy's
-      # partial fingerprints so upload-sarif computes consistent ones, and split the runs into
-      # files of at most 20 runs each.
+      # Codacy runs every tool it knows and emits one SARIF run per tool (24 here). Many of them do
+      # not apply to this stack (PMD is for Java) or cannot run in this setup, and only add failing
+      # entries to code scanning. Keep only the tools listed in CODACY_TOOLS; the TypeScript code
+      # is linted by ESLint and type-checked in the CI workflow instead.
+      # Then give each run a stable category of its own, drop Codacy's partial fingerprints so
+      # upload-sarif computes consistent ones, and split the runs into files of at most 20 runs
+      # each (the code scanning limit per upload).
       - name: Prepare SARIF for code scanning
+        env:
+          CODACY_TOOLS: >-
+            bandit checkov lizard opengrep prospector pylint pylintpython3 ruff spectral
         run: |
-          jq '
-            .runs |= (
+          jq --arg tools "$CODACY_TOOLS" '
+            ($tools | split(" ") | map(select(. != ""))) as $allowed
+            | .runs |= map(select(
+                ((.tool.driver.name // "")
+                  | ascii_downcase
+                  | sub(" \\(reported by codacy\\)$"; "")) as $tool
+                | $allowed | index($tool) != null
+              ))
+            | .runs |= (
               to_entries
               | (map(.value.tool.driver.name // "codacy")) as $names
               | map(
