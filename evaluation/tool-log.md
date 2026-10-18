@@ -354,3 +354,14 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied (F-095 fixed; others accepted)
 - Changes: see findings
 - Notes: Verified before the review: `make up` (Compose via Podman), `make smoke` (SMOKE PASSED), `make lint`, `make typecheck`, `make tf-check`, `make test` (API 118 tests, 96.78% coverage; UI 62 tests, 96.6% lines). Problems found and fixed on the way: Podman OCI builds drop Dockerfile `HEALTHCHECK`, so healthchecks are also declared in Compose; the Makefile test teardown used a relative path after `cd api`; a unit test leaked `MIGRATION_DATABASE_URL` from the integration tests.
+
+### T-033 | 2026-10-18T09:55Z | phase 8
+- Source: MCP sec-review/threatmodel_update_threat_model_file
+- Why: Bring docs/threat-model.md in line with the finished code: final statuses, code references, and the two threats added during the build (F-077 webhook forgery, F-090 cross-service secret access).
+- Input: evaluation/raw/T-033.input.json (content identical to evaluation/raw/T-033.produced.json; `append: false`)
+- Output: evaluation/raw/T-033.output.json. `success: true`, `action: created`, `threats_documented: 19`, `references_linked: 36`, `mitigated: 17`, `open: 0`.
+- Interpretation: Written as requested, and the file was checked after writing. The tool reports `action: created` although it replaced an existing file. `open: 0` counts only status `open`, and the two `accepted` threats appear in neither counter.
+- Findings: none
+- Action: applied
+- Changes: docs/threat-model.md (commit filled in below)
+- Notes: Before sending, I corrected TM-17's stale text (`sslmode=require` → `verify-full`, as implemented).

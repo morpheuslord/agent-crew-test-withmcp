@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "file_path": "/run/media/morpheuslord/Personal_Files/Projects/mcp_test_server/agent-crew-test-withmcp/docs/threat-model.md",
+  "action": "created",
+  "stats": {
+    "threats_documented": 19,
+    "references_linked": 36,
+    "mitigated": 17,
+    "open": 0
+  },
+  "message": "Threat model 'Taskboard (whole system)' written to /run/media/morpheuslord/Personal_Files/Projects/mcp_test_server/agent-crew-test-withmcp/docs/threat-model.md. 19 threats documented with 36 references."
+}
