@@ -209,7 +209,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Following the prompt I reviewed the cache code and its call sites; the review is in evaluation/raw/T-019.review.md: "Needs Attention". R19-1 (medium): a cache-aside race can keep a demoted admin's role for up to the TTL, because `authenticate()` took `role` and `is_active` from the cached profile. That contradicts the T-003 threat-model mitigation TM-14 ("Authorization runs against the database before any cache read"), which my implementation did not meet. R19-2 is an accepted low risk. R19-3 and R19-4 are low and handled in Terraform.
 - Findings: F-080, F-081, F-082, F-083
 - Action: applied (F-080 fixed; F-081 accepted; F-082/F-083 in phase 6)
-- Changes: see findings
+- Changes: baseline 01111f5; F-080 fix 939a161
 - Notes: The checklist again lists the payment, archive and XML items that do not apply.
 
 ### T-020 | 2026-10-18T08:05Z | phase 4
