@@ -220,5 +220,5 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Source: the split upload from T-018 works, since the run succeeded and the tools refreshed. Inferred: the remaining red tools report execution errors because they do not apply to this stack or cannot run in this setup. Following the user's instruction, only the 9 working tools are uploaded. Tested in an `alpine:3.22` container with jq 1.8.2 against a synthetic 24-run SARIF: 9 runs kept with stable categories, 1 upload file; an empty allow-list result produces no files and no error.
 - Findings: none
 - Action: applied
-- Changes: .github/workflows/codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md (commit filled in below)
+- Changes: .github/workflows/codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md (de661a6)
 - Notes: The tool entries for the dropped tools will stay in the tool status page as stale configurations until someone deletes them there. I cannot do that without the code scanning API, which the brief rules out, so I told the user.
