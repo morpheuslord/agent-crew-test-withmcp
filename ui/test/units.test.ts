@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError, assertUuid } from '../src/api/ApiError.js';
 import { HttpApiClient } from '../src/api/HttpApiClient.js';
+import { deriveKey } from '../src/app.js';
 import { ConfigError, loadConfig } from '../src/config.js';
 import { createLogger, currentRequestId, requestScope } from '../src/logging.js';
 import { MarkdownRenderer } from '../src/security/MarkdownRenderer.js';
@@ -74,6 +75,15 @@ describe('loadConfig', () => {
     expect(
       loadConfig({ ...base, COOKIE_SECURE: 'false', NODE_ENV: 'development' }).cookieSecure,
     ).toBe(false);
+  });
+});
+
+describe('deriveKey', () => {
+  it('gives each purpose its own key', () => {
+    const secret = 'c'.repeat(32);
+    expect(deriveKey(secret, 'csrf')).not.toBe(deriveKey(secret, 'cookie-signing'));
+    expect(deriveKey(secret, 'csrf')).not.toContain(secret);
+    expect(deriveKey(secret, 'csrf')).toBe(deriveKey(secret, 'csrf'));
   });
 });
 

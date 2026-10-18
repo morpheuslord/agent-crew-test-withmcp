@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express, { type Express } from 'express';
@@ -32,6 +33,11 @@ export interface AppDependencies {
   rootDir?: string;
 }
 
+/** Derives an independent key per purpose from COOKIE_SECRET, so no key serves two HMAC uses. */
+export function deriveKey(secret: string, purpose: string): string {
+  return createHmac('sha256', secret).update(`taskboard/${purpose}`).digest('base64url');
+}
+
 /** Composition root of the UI server: wires middleware, controllers and error handling. */
 export function createApp({
   config,
@@ -41,7 +47,7 @@ export function createApp({
 }: AppDependencies): Express {
   const app = express();
   const cookies = new CookiePolicy(config.cookieSecure);
-  const csrf = new CsrfProtection(config.cookieSecret, cookies);
+  const csrf = new CsrfProtection(deriveKey(config.cookieSecret, 'csrf'), cookies);
   const flash = new FlashMessages(cookies);
 
   app.disable('x-powered-by');
@@ -84,7 +90,7 @@ export function createApp({
     res.setHeader('Cache-Control', 'no-store');
     next();
   });
-  app.use(cookieParser(config.cookieSecret));
+  app.use(cookieParser(deriveKey(config.cookieSecret, 'cookie-signing')));
   app.use(express.urlencoded({ extended: false, limit: '64kb', parameterLimit: 50 }));
   app.use(csrf.issue());
   app.use(csrf.verify());
