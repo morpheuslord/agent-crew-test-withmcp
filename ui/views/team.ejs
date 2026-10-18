@@ -1,0 +1,44 @@
+<%- include('partials/header') %>
+<h1><%= detail.team.name %></h1>
+<div class="grid">
+  <section class="card">
+    <h2>Members</h2>
+    <ul>
+      <% for (const member of detail.members) { %>
+      <li>
+        <%= member.display_name %> <span class="muted"><%= member.email %></span>
+        <% if (member.user_id === detail.team.owner_id) { %><span class="badge">owner</span><% } else if (canManage) { %>
+        <form method="post" action="/teams/<%= detail.team.id %>/members/<%= member.user_id %>/remove" class="inline">
+          <%- include('partials/csrf') %>
+          <button type="submit" class="link danger">Remove</button>
+        </form>
+        <% } %>
+      </li>
+      <% } %>
+    </ul>
+    <% if (canManage) { %>
+    <form method="post" action="/teams/<%= detail.team.id %>/members">
+      <%- include('partials/csrf') %>
+      <label>Add member by email <input type="email" name="email" required></label>
+      <button type="submit">Add member</button>
+    </form>
+    <% } %>
+  </section>
+  <section class="card">
+    <h2>Projects</h2>
+    <ul>
+      <% for (const project of detail.projects) { %>
+      <li><a href="/projects/<%= project.id %>"><%= project.name %></a><%= project.is_archived ? ' (archived)' : '' %></li>
+      <% } %>
+    </ul>
+    <% if (canManage) { %>
+    <form method="post" action="/teams/<%= detail.team.id %>/projects">
+      <%- include('partials/csrf') %>
+      <label>Project name <input name="name" required maxlength="100"></label>
+      <label>Webhook URL (optional, https) <input type="url" name="webhook_url" maxlength="2048"></label>
+      <button type="submit">Create project</button>
+    </form>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/footer') %>

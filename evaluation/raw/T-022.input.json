@@ -1,0 +1,127 @@
+{
+  "tool": "mcp__sec-review__sca_verify_packages",
+  "arguments": {
+    "packages_json": [
+      {
+        "name": "express",
+        "version": "5.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "ejs",
+        "version": "7.0.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "helmet",
+        "version": "8.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "cookie-parser",
+        "version": "1.4.7",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "multer",
+        "version": "2.4.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "marked",
+        "version": "18.1.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "sanitize-html",
+        "version": "2.18.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "pino",
+        "version": "10.4.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "zod",
+        "version": "4.6.7",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "typescript",
+        "version": "6.0.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/express",
+        "version": "5.0.6",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/cookie-parser",
+        "version": "1.4.10",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/multer",
+        "version": "2.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/sanitize-html",
+        "version": "2.16.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/node",
+        "version": "24.19.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "vitest",
+        "version": "5.0.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@vitest/coverage-v8",
+        "version": "5.0.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "supertest",
+        "version": "7.3.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/supertest",
+        "version": "7.2.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "eslint",
+        "version": "10.13.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint/js",
+        "version": "10.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "typescript-eslint",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "prettier",
+        "version": "3.9.10",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "globals",
+        "version": "17.13.0",
+        "ecosystem": "npm"
+      }
+    ]
+  }
+}

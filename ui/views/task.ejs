@@ -1,0 +1,71 @@
+<%- include('partials/header') %>
+<p class="crumbs"><a href="/projects/<%= project.id %>"><%= project.name %></a> /</p>
+<h1><%= task.title %></h1>
+<p class="muted"><%= task.status.replace('_', ' ') %> · <%= task.priority %><%= assigneeName ? ' · ' + assigneeName : '' %><%= task.due_date ? ' · due ' + task.due_date : '' %></p>
+<% if (task.labels.length) { %><p><% for (const label of task.labels) { %><span class="label"><%= label %></span> <% } %></p><% } %>
+<section class="card markdown"><%- descriptionHtml %></section>
+
+<section class="card">
+  <h2>Comments</h2>
+  <% for (const comment of comments) { %>
+  <article class="comment">
+    <p class="muted"><strong><%= comment.author_name %></strong> · <%= comment.created_at.slice(0, 16).replace('T', ' ') %></p>
+    <div class="markdown"><%- comment.bodyHtml %></div>
+    <% if (comment.canEdit && !project.is_archived) { %>
+    <details>
+      <summary>Edit</summary>
+      <form method="post" action="/comments/<%= comment.id %>">
+        <%- include('partials/csrf') %>
+        <input type="hidden" name="task_id" value="<%= task.id %>">
+        <textarea name="body" rows="3" required maxlength="10000"><%= comment.body %></textarea>
+        <button type="submit">Save comment</button>
+      </form>
+      <form method="post" action="/comments/<%= comment.id %>/delete">
+        <%- include('partials/csrf') %>
+        <input type="hidden" name="task_id" value="<%= task.id %>">
+        <button type="submit" class="danger">Delete comment</button>
+      </form>
+    </details>
+    <% } %>
+  </article>
+  <% } %>
+  <% if (!project.is_archived) { %>
+  <form method="post" action="/tasks/<%= task.id %>/comments">
+    <%- include('partials/csrf') %>
+    <label>Add a comment (Markdown) <textarea name="body" rows="3" required maxlength="10000"></textarea></label>
+    <button type="submit">Comment</button>
+  </form>
+  <% } %>
+</section>
+
+<section class="card">
+  <h2>Attachments</h2>
+  <ul>
+    <% for (const attachment of attachments) { %>
+    <li><a href="/attachments/<%= attachment.id %>/download"><%= attachment.filename %></a> <span class="muted"><%= attachment.size %></span></li>
+    <% } %>
+  </ul>
+  <% if (!project.is_archived) { %>
+  <form method="post" action="/tasks/<%= task.id %>/attachments" enctype="multipart/form-data">
+    <%- include('partials/csrf') %>
+    <label>File (up to 10 MB) <input type="file" name="file" required></label>
+    <button type="submit">Upload</button>
+  </form>
+  <% } %>
+</section>
+
+<% if (!project.is_archived) { %>
+<section class="card">
+  <h2>Edit task</h2>
+  <form method="post" action="/tasks/<%= task.id %>">
+    <%- include('partials/csrf') %>
+    <%- include('partials/task-fields', { task }) %>
+    <button type="submit">Save task</button>
+  </form>
+  <form method="post" action="/tasks/<%= task.id %>/delete">
+    <%- include('partials/csrf') %>
+    <button type="submit" class="danger">Delete task</button>
+  </form>
+</section>
+<% } %>
+<%- include('partials/footer') %>

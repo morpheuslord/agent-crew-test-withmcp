@@ -1,0 +1,13 @@
+<%- include('partials/header') %>
+<h1>Activity (all teams)</h1>
+<ul class="activity card">
+  <% for (const line of lines) { %>
+  <li><span class="muted"><%= line.when %></span> <strong><%= line.actor %></strong> <%= line.text %></li>
+  <% } %>
+</ul>
+<p class="pager">
+  <% if (page > 1) { %><a href="/admin/activity?page=<%= page - 1 %>">Previous</a><% } %>
+  Page <%= page %> of <%= pages %>
+  <% if (page < pages) { %><a href="/admin/activity?page=<%= page + 1 %>">Next</a><% } %>
+</p>
+<%- include('partials/footer') %>

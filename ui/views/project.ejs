@@ -1,0 +1,58 @@
+<%- include('partials/header') %>
+<p class="crumbs"><a href="/teams/<%= team.id %>"><%= team.name %></a> /</p>
+<h1><%= project.name %><% if (project.is_archived) { %> <span class="badge">archived</span><% } %></h1>
+<p><a href="/projects/<%= project.id %>/export.csv">Export CSV</a></p>
+<div class="board">
+  <% for (const column of columns) { %>
+  <section class="column">
+    <h2><%= column.label %> <span class="muted">(<%= column.tasks.length %>)</span></h2>
+    <% for (const task of column.tasks) { %>
+    <article class="card task priority-<%= task.priority %>">
+      <a href="/tasks/<%= task.id %>"><%= task.title %></a>
+      <p class="muted"><%= task.priority %><%= task.assigneeName ? ' · ' + task.assigneeName : '' %><%= task.due_date ? ' · due ' + task.due_date : '' %></p>
+      <% if (task.labels.length) { %><p><% for (const label of task.labels) { %><span class="label"><%= label %></span> <% } %></p><% } %>
+    </article>
+    <% } %>
+  </section>
+  <% } %>
+</div>
+<div class="grid">
+  <% if (!project.is_archived) { %>
+  <section class="card">
+    <h2>New task</h2>
+    <form method="post" action="/projects/<%= project.id %>/tasks">
+      <%- include('partials/csrf') %>
+      <%- include('partials/task-fields', { task: null }) %>
+      <button type="submit">Create task</button>
+    </form>
+  </section>
+  <% } %>
+  <% if (canManage && !project.is_archived) { %>
+  <section class="card">
+    <h2>Settings</h2>
+    <form method="post" action="/projects/<%= project.id %>/settings">
+      <%- include('partials/csrf') %>
+      <label>Name <input name="name" required maxlength="100" value="<%= project.name %>"></label>
+      <label>Webhook URL (https) <input type="url" name="webhook_url" maxlength="2048" value="<%= project.webhook_url || '' %>"></label>
+      <label class="check"><input type="checkbox" name="clear_webhook"> Remove webhook</label>
+      <% if (project.webhook_signing_key) { %>
+      <p class="muted">Signing key for verifying <code>X-Taskboard-Signature</code>: <code><%= project.webhook_signing_key %></code></p>
+      <% } %>
+      <button type="submit">Save settings</button>
+    </form>
+    <form method="post" action="/projects/<%= project.id %>/archive">
+      <%- include('partials/csrf') %>
+      <button type="submit" class="danger">Archive project</button>
+    </form>
+  </section>
+  <% } %>
+  <section class="card">
+    <h2>Activity</h2>
+    <ul class="activity">
+      <% for (const line of activity) { %>
+      <li><span class="muted"><%= line.when %></span> <strong><%= line.actor %></strong> <%= line.text %></li>
+      <% } %>
+    </ul>
+  </section>
+</div>
+<%- include('partials/footer') %>

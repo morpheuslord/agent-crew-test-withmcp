@@ -1,0 +1,61 @@
+{
+  "success": true,
+  "review_type": "ai_powered_security_review",
+  "instructions": "IMPORTANT: You (the AI agent) must now perform the security review. The code is not included here: review the code you just wrote, which is already in your context, using the checklist and focus areas. Report all security issues found with severity ratings and fixes.",
+  "review_prompt": "## SECURITY CODE REVIEW REQUEST\n\n**File:** `ui/src, ui/views`\n**Components:** browser-frontend, user-generated-content, session-management, web-endpoint, file-upload\n**Risk Level:** CRITICAL\n\n### Review Instructions\n\nReview the code you just wrote (it is already in your context) for security vulnerabilities. For each issue found:\n1. Identify the vulnerability type and severity (Critical/High/Medium/Low)\n2. Explain why it's a security risk\n3. Show the problematic code snippet\n4. Provide a secure code fix\n\n### Focus Areas\n\nPay special attention to:\n- A user calls an admin or other-role function because only the UI hides it\n- An uploaded archive writes files outside the target folder when extracted\n- Sensitive data travels over plain HTTP or an unencrypted connection\n- Debug features or consoles are left on in production\n- Frontend code writes untrusted data into the page with unsafe DOM APIs\n- .env, .git, or backup files are reachable from the web\n- Forged or unsigned JWTs are accepted\n- Long-lived storage keys are shipped to the browser or mobile app\n- A request sets fields the user should not control, such as role or price\n- One user reads or changes another user's data by changing an id in the request\n- Session ids, reset tokens, or API keys can be guessed\n- An attacker plants a session id before login and reuses it afterwards\n\n### Security Checklist\n\nVerify each item and report violations:\n- [ ] Check permissions on the server for every action: Enforce role and permission checks in a central layer on each endpoint, not only by hiding UI.\n- [ ] Extract archives safely: Ignore paths inside archives, reject symlinks and entries that escape the target folder, and cap size and file count.\n- [ ] Use HTTPS for every connection: Serve everything over HTTPS with a trusted certificate, redirect HTTP to HTTPS, and use TLS for service-to-service calls as well.\n- [ ] Turn debug features off in production: Set DEBUG false, remove debug consoles and verbose logging, and fail the deploy if debug is on.\n- [ ] Use safe DOM APIs: Use textContent or framework bindings instead of innerHTML, document.write, or dangerouslySetInnerHTML.\n- [ ] Encode output for its context: Use your template engine's automatic escaping, and encode correctly for HTML, attributes, URLs, and JavaScript.\n- [ ] Do not deploy repo metadata or env files: Exclude .git, .env, and backups from the build and the web root, and block them at the web server.\n- [ ] Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.\n- [ ] Verify token signatures against an allow-list of algorithms: Verify every JWT signature, fix the accepted algorithms in code, and load keys from trusted configuration. Never accept alg none.\n- [ ] Give clients short-lived, narrowly scoped credentials: Issue pre-signed or token-exchanged credentials limited to one object or prefix. Never ship long-lived keys to clients.\n- [ ] Accept only the fields you expect: Bind requests to an explicit schema or DTO with allowed fields. Never copy a request body straight onto a model.\n- [ ] Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.\n- [ ] Generate tokens with a cryptographic random source: Use secrets.token_urlsafe, crypto.randomBytes, or the framework default. Never use Math.random, time, or counters.\n- [ ] Issue a fresh session at login: Create a new session id on every login and re-authentication, and discard the old one.\n- [ ] Sanitize user-provided HTML: Run user HTML through a maintained sanitizer such as DOMPurify or bleach with a strict allow-list. Prefer markdown or plain text.\n- [ ] Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.\n- [ ] Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.\n- [ ] Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.\n- [ ] Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies.\n\n### Expected Response Format\n\nProvide your security review with:\n1. **Summary:** Overall assessment (Secure/Needs Attention/Insecure)\n2. **Findings:** List of security issues with severity and fixes\n3. **Checklist Results:** Which items pass/fail\n4. **Recommendations:** Prioritized list of actions",
+  "context": {
+    "file_path": "ui/src, ui/views",
+    "components": [
+      "browser-frontend",
+      "user-generated-content",
+      "session-management",
+      "web-endpoint",
+      "file-upload"
+    ],
+    "risk_level": "critical"
+  },
+  "security_checklist": [
+    "Check permissions on the server for every action: Enforce role and permission checks in a central layer on each endpoint, not only by hiding UI.",
+    "Extract archives safely: Ignore paths inside archives, reject symlinks and entries that escape the target folder, and cap size and file count.",
+    "Use HTTPS for every connection: Serve everything over HTTPS with a trusted certificate, redirect HTTP to HTTPS, and use TLS for service-to-service calls as well.",
+    "Turn debug features off in production: Set DEBUG false, remove debug consoles and verbose logging, and fail the deploy if debug is on.",
+    "Use safe DOM APIs: Use textContent or framework bindings instead of innerHTML, document.write, or dangerouslySetInnerHTML.",
+    "Encode output for its context: Use your template engine's automatic escaping, and encode correctly for HTML, attributes, URLs, and JavaScript.",
+    "Do not deploy repo metadata or env files: Exclude .git, .env, and backups from the build and the web root, and block them at the web server.",
+    "Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.",
+    "Verify token signatures against an allow-list of algorithms: Verify every JWT signature, fix the accepted algorithms in code, and load keys from trusted configuration. Never accept alg none.",
+    "Give clients short-lived, narrowly scoped credentials: Issue pre-signed or token-exchanged credentials limited to one object or prefix. Never ship long-lived keys to clients.",
+    "Accept only the fields you expect: Bind requests to an explicit schema or DTO with allowed fields. Never copy a request body straight onto a model.",
+    "Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.",
+    "Generate tokens with a cryptographic random source: Use secrets.token_urlsafe, crypto.randomBytes, or the framework default. Never use Math.random, time, or counters.",
+    "Issue a fresh session at login: Create a new session id on every login and re-authentication, and discard the old one.",
+    "Sanitize user-provided HTML: Run user HTML through a maintained sanitizer such as DOMPurify or bleach with a strict allow-list. Prefer markdown or plain text.",
+    "Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.",
+    "Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.",
+    "Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.",
+    "Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies."
+  ],
+  "focus_areas": [
+    "A user calls an admin or other-role function because only the UI hides it",
+    "An uploaded archive writes files outside the target folder when extracted",
+    "Sensitive data travels over plain HTTP or an unencrypted connection",
+    "Debug features or consoles are left on in production",
+    "Frontend code writes untrusted data into the page with unsafe DOM APIs",
+    ".env, .git, or backup files are reachable from the web",
+    "Forged or unsigned JWTs are accepted",
+    "Long-lived storage keys are shipped to the browser or mobile app",
+    "A request sets fields the user should not control, such as role or price",
+    "One user reads or changes another user's data by changing an id in the request",
+    "Session ids, reset tokens, or API keys can be guessed",
+    "An attacker plants a session id before login and reuses it afterwards"
+  ],
+  "expected_response": {
+    "format": "structured_security_review",
+    "required_sections": [
+      "overall_assessment",
+      "findings_list",
+      "checklist_results",
+      "recommended_fixes"
+    ]
+  }
+}

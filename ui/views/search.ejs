@@ -1,0 +1,40 @@
+<%- include('partials/header') %>
+<h1>Search tasks</h1>
+<form method="get" action="/search" class="card filters">
+  <label>Text <input name="q" maxlength="200" value="<%= query.q || '' %>"></label>
+  <label>Status
+    <select name="status">
+      <option value="">Any</option>
+      <% for (const s of statuses) { %><option value="<%= s %>" <%= query.status === s ? 'selected' : '' %>><%= s.replace('_', ' ') %></option><% } %>
+    </select>
+  </label>
+  <label>Label <input name="label" maxlength="50" value="<%= query.label || '' %>"></label>
+  <label>Due before <input type="date" name="due_before" value="<%= query.due_before || '' %>"></label>
+  <label>Sort by
+    <select name="sort">
+      <% for (const f of sortFields) { %><option value="<%= f %>" <%= query.sort === f ? 'selected' : '' %>><%= f.replace('_', ' ') %></option><% } %>
+    </select>
+  </label>
+  <label>Order
+    <select name="order">
+      <option value="desc" <%= query.order !== 'asc' ? 'selected' : '' %>>Descending</option>
+      <option value="asc" <%= query.order === 'asc' ? 'selected' : '' %>>Ascending</option>
+    </select>
+  </label>
+  <button type="submit">Search</button>
+</form>
+<p class="muted"><%= results.total %> result(s)</p>
+<table>
+  <thead><tr><th>Task</th><th>Status</th><th>Priority</th><th>Due</th><th>Labels</th></tr></thead>
+  <tbody>
+    <% for (const task of results.items) { %>
+    <tr><td><a href="/tasks/<%= task.id %>"><%= task.title %></a></td><td><%= task.status.replace('_', ' ') %></td><td><%= task.priority %></td><td><%= task.due_date || '' %></td><td><%= task.labels.join(', ') %></td></tr>
+    <% } %>
+  </tbody>
+</table>
+<p class="pager">
+  <% if (results.page > 1) { %><a href="/search?<%= baseQuery %>&page=<%= results.page - 1 %>">Previous</a><% } %>
+  Page <%= results.page %> of <%= pages %>
+  <% if (results.page < pages) { %><a href="/search?<%= baseQuery %>&page=<%= results.page + 1 %>">Next</a><% } %>
+</p>
+<%- include('partials/footer') %>

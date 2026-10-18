@@ -1,0 +1,13 @@
+<%- include('partials/header') %>
+<h1>Create an account</h1>
+<% if (error) { %><p class="flash flash-error" role="alert"><%= error %></p><% } %>
+<form method="post" action="/register" class="card narrow">
+  <%- include('partials/csrf') %>
+  <label>Email <input type="email" name="email" required autocomplete="username" value="<%= values.email || '' %>"></label>
+  <label>Display name <input name="display_name" required maxlength="100" value="<%= values.display_name || '' %>"></label>
+  <label>Password (12 characters or more) <input type="password" name="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
+  <label>Confirm password <input type="password" name="password_confirm" required minlength="12" maxlength="128" autocomplete="new-password"></label>
+  <button type="submit">Register</button>
+</form>
+<p><a href="/login">Already have an account? Log in</a></p>
+<%- include('partials/footer') %>

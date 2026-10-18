@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+<h1>Users</h1>
+<table>
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>
+    <% for (const u of users.items) { %>
+    <tr>
+      <td><%= u.display_name %></td>
+      <td><%= u.email %></td>
+      <td><%= u.role %></td>
+      <td><%= u.is_active ? 'active' : 'deactivated' %></td>
+      <td>
+        <% if (u.id !== user.id) { %>
+        <form method="post" action="/admin/users/<%= u.id %>" class="inline">
+          <%- include('partials/csrf') %>
+          <input type="hidden" name="action" value="<%= u.role === 'admin' ? 'make_member' : 'make_admin' %>">
+          <button type="submit" class="link"><%= u.role === 'admin' ? 'Make member' : 'Make admin' %></button>
+        </form>
+        <form method="post" action="/admin/users/<%= u.id %>" class="inline">
+          <%- include('partials/csrf') %>
+          <input type="hidden" name="action" value="<%= u.is_active ? 'deactivate' : 'activate' %>">
+          <button type="submit" class="link <%= u.is_active ? 'danger' : '' %>"><%= u.is_active ? 'Deactivate' : 'Reactivate' %></button>
+        </form>
+        <% } else { %><span class="muted">you</span><% } %>
+      </td>
+    </tr>
+    <% } %>
+  </tbody>
+</table>
+<p class="pager">
+  <% if (users.page > 1) { %><a href="/admin/users?page=<%= users.page - 1 %>">Previous</a><% } %>
+  Page <%= users.page %> of <%= pages %>
+  <% if (users.page < pages) { %><a href="/admin/users?page=<%= users.page + 1 %>">Next</a><% } %>
+</p>
+<%- include('partials/footer') %>

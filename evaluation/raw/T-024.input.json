@@ -1,0 +1,642 @@
+{
+  "tool": "mcp__sec-review__sca_scan_dependencies",
+  "arguments": {
+    "packages_json": [
+      {
+        "name": "@babel/helper-string-parser",
+        "version": "7.29.7",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@babel/helper-validator-identifier",
+        "version": "7.29.7",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@babel/parser",
+        "version": "7.29.9",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@babel/types",
+        "version": "7.29.8",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@bcoe/v8-coverage",
+        "version": "1.0.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@cacheable/memory",
+        "version": "2.2.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@cacheable/utils",
+        "version": "2.5.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint-community/eslint-utils",
+        "version": "4.10.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint-community/regexpp",
+        "version": "4.12.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint/config-array",
+        "version": "0.23.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint/config-helpers",
+        "version": "0.7.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint/core",
+        "version": "1.2.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint/object-schema",
+        "version": "3.0.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@eslint/plugin-kit",
+        "version": "0.7.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@humanfs/core",
+        "version": "0.19.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@humanfs/node",
+        "version": "0.16.8",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@humanfs/types",
+        "version": "0.15.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@humanwhocodes/module-importer",
+        "version": "1.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@humanwhocodes/retry",
+        "version": "0.4.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@jridgewell/resolve-uri",
+        "version": "3.1.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@jridgewell/sourcemap-codec",
+        "version": "1.6.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@jridgewell/trace-mapping",
+        "version": "0.3.31",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@keyv/bigmap",
+        "version": "1.3.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@keyv/serialize",
+        "version": "1.1.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@noble/hashes",
+        "version": "1.8.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@oxc-project/types",
+        "version": "0.154.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@paralleldrive/cuid2",
+        "version": "2.3.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@pinojs/redact",
+        "version": "0.4.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@rolldown/binding-linux-x64-gnu",
+        "version": "1.2.14",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@rolldown/pluginutils",
+        "version": "1.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/body-parser",
+        "version": "1.19.6",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/chai",
+        "version": "5.2.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/connect",
+        "version": "3.4.38",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/cookiejar",
+        "version": "2.1.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/deep-eql",
+        "version": "4.0.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/esrecurse",
+        "version": "4.3.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/estree",
+        "version": "1.0.9",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/express-serve-static-core",
+        "version": "5.1.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/http-errors",
+        "version": "2.0.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/json-schema",
+        "version": "7.0.15",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/methods",
+        "version": "1.1.4",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/qs",
+        "version": "6.15.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/range-parser",
+        "version": "1.2.7",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/send",
+        "version": "1.2.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/serve-static",
+        "version": "2.2.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@types/superagent",
+        "version": "8.1.11",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/eslint-plugin",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/parser",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/project-service",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/scope-manager",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/tsconfig-utils",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/type-utils",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/types",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/typescript-estree",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/utils",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@typescript-eslint/visitor-keys",
+        "version": "8.71.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@vitest/istanbul-lib-coverage",
+        "version": "1.0.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@vitest/istanbul-lib-report",
+        "version": "1.0.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@vitest/mocker",
+        "version": "5.0.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "@vitest/spy",
+        "version": "5.0.5",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "accepts",
+        "version": "2.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "acorn",
+        "version": "8.19.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "acorn-jsx",
+        "version": "5.3.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "ajv",
+        "version": "6.15.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "append-field",
+        "version": "1.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "asap",
+        "version": "2.0.6",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "assertion-error",
+        "version": "2.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "ast-v8-to-istanbul",
+        "version": "1.0.7",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "asynckit",
+        "version": "0.4.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "atomic-sleep",
+        "version": "1.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "balanced-match",
+        "version": "4.0.4",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "body-parser",
+        "version": "2.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "brace-expansion",
+        "version": "5.0.12",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "busboy",
+        "version": "1.6.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "bytes",
+        "version": "3.1.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "cacheable",
+        "version": "2.5.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "call-bind-apply-helpers",
+        "version": "1.0.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "call-bound",
+        "version": "1.0.4",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "chai",
+        "version": "6.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "combined-stream",
+        "version": "1.0.8",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "component-emitter",
+        "version": "1.3.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "content-disposition",
+        "version": "2.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "content-type",
+        "version": "2.1.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "cookie",
+        "version": "0.7.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "cookie-signature",
+        "version": "1.0.6",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "cookie-signature",
+        "version": "1.2.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "cookiejar",
+        "version": "2.1.4",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "cross-spawn",
+        "version": "7.0.6",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "dayjs",
+        "version": "1.11.23",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "debug",
+        "version": "4.4.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "deep-is",
+        "version": "0.1.4",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "delayed-stream",
+        "version": "1.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "depd",
+        "version": "2.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "detect-libc",
+        "version": "2.1.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "dezalgo",
+        "version": "1.0.4",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "dom-serializer",
+        "version": "3.1.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "domelementtype",
+        "version": "3.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "domhandler",
+        "version": "6.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "domutils",
+        "version": "4.0.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "dunder-proto",
+        "version": "1.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "ee-first",
+        "version": "1.1.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "encodeurl",
+        "version": "2.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "entities",
+        "version": "8.1.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "es-define-property",
+        "version": "1.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "es-errors",
+        "version": "1.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "es-module-lexer",
+        "version": "2.3.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "es-object-atoms",
+        "version": "1.1.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "es-set-tostringtag",
+        "version": "2.1.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "escape-html",
+        "version": "1.0.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "escape-string-regexp",
+        "version": "4.0.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "eslint-scope",
+        "version": "9.1.2",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "eslint-visitor-keys",
+        "version": "3.4.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "eslint-visitor-keys",
+        "version": "5.0.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "espree",
+        "version": "11.2.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "esquery",
+        "version": "1.7.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "esrecurse",
+        "version": "4.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "estraverse",
+        "version": "5.3.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "estree-walker",
+        "version": "3.0.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "esutils",
+        "version": "2.0.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "etag",
+        "version": "1.8.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "expect-type",
+        "version": "1.4.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "fast-deep-equal",
+        "version": "3.1.3",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "fast-json-stable-stringify",
+        "version": "2.1.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "fast-levenshtein",
+        "version": "2.0.6",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "fast-safe-stringify",
+        "version": "2.1.1",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "fdir",
+        "version": "6.5.0",
+        "ecosystem": "npm"
+      },
+      {
+        "name": "file-entry-cache",
+        "version": "11.1.5",
+        "ecosystem": "npm"
+      }
+    ]
+  }
+}

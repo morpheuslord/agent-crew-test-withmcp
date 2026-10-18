@@ -1,0 +1,28 @@
+<label>Title <input name="title" required maxlength="200" value="<%= task ? task.title : '' %>"></label>
+<label>Description (Markdown) <textarea name="description" rows="5" maxlength="20000"><%= task ? task.description : '' %></textarea></label>
+<div class="row">
+  <label>Status
+    <select name="status">
+      <% for (const s of ['todo', 'in_progress', 'done']) { %>
+      <option value="<%= s %>" <%= task && task.status === s ? 'selected' : '' %>><%= s.replace('_', ' ') %></option>
+      <% } %>
+    </select>
+  </label>
+  <label>Priority
+    <select name="priority">
+      <% for (const p of ['low', 'medium', 'high']) { %>
+      <option value="<%= p %>" <%= (task ? task.priority === p : p === 'medium') ? 'selected' : '' %>><%= p %></option>
+      <% } %>
+    </select>
+  </label>
+  <label>Assignee
+    <select name="assignee_id">
+      <option value="">Unassigned</option>
+      <% for (const m of members) { %>
+      <option value="<%= m.user_id %>" <%= task && task.assignee_id === m.user_id ? 'selected' : '' %>><%= m.display_name %></option>
+      <% } %>
+    </select>
+  </label>
+  <label>Due date <input type="date" name="due_date" value="<%= task && task.due_date ? task.due_date : '' %>"></label>
+</div>
+<label>Labels (comma separated) <input name="labels" maxlength="1100" value="<%= task ? task.labels.join(', ') : '' %>"></label>

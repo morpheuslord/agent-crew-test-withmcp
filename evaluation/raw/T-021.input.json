@@ -1,0 +1,9 @@
+{
+  "tool": "mcp__sec-review__general_lightweight_security_review",
+  "arguments": {
+    "task_description": "Build the Taskboard UI server: Node.js 24, TypeScript, Express 5 with EJS server-rendered pages (login, register, forgot/reset password, dashboard, team page, project board, task detail, search, profile, admin users, admin activity). It authenticates browser users by storing the API's opaque session token in an HttpOnly SameSite cookie and calls the internal API with Authorization: Bearer plus a shared service secret header; CSRF protection with an HMAC token bound to a cookie on every POST form; flash messages in a signed cookie; renders task descriptions and comments written in Markdown to HTML (marked) and sanitizes them (sanitize-html); proxies multipart attachment uploads (multer, 10 MB limit) and streams downloads back with Content-Disposition attachment; strict CSP via helmet; structured JSON logging with a per-request id passed to the API; post-login redirect to a local path.",
+    "components": "browser-frontend,user-generated-content,session-management,web-endpoint,file-upload",
+    "data_handled": "credentials,personal_data",
+    "technologies": "Node.js 24, TypeScript, Express 5, EJS, helmet, multer, marked, sanitize-html, cookie-parser, pino"
+  }
+}

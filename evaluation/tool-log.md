@@ -222,3 +222,69 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied
 - Changes: .github/workflows/codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md (de661a6)
 - Notes: The tool entries for the dropped tools will stay in the tool status page as stale configurations until someone deletes them there. I cannot do that without the code scanning API, which the brief rules out, so I told the user.
+
+### T-021 | 2026-10-18T08:15Z | phase 5
+- Source: MCP sec-review/general_lightweight_security_review
+- Why: Server workflow step 1 before writing the UI server.
+- Input: evaluation/raw/T-021.input.json (components `browser-frontend,user-generated-content,session-management,web-endpoint,file-upload`; data_handled `credentials,personal_data`)
+- Output: evaluation/raw/T-021.output.json. Summary: risk `critical`, 31 threats, 34 countermeasures.
+- Interpretation: New relative to earlier entries: `dom-xss` / `safe-dom-apis`, and `third-party-script-compromise` / `subresource-integrity`. Applied by design: the UI ships no client-side JavaScript at all, serves its only stylesheet itself, and its CSP allows `'self'` only. Everything else confirms the UI half of existing requirements: CSRF, cookie flags, open redirect, output encoding, sanitisation, upload limits, generic errors, security headers, and sessions ended on the server. `jwt-tampering` and `long-lived-storage-credentials` do not apply (opaque tokens; no storage credentials in the browser).
+- Findings: F-085, F-086
+- Action: applied in the UI code (phase 5 commit)
+- Changes: ui/ (commit filled in below)
+- Notes: none
+
+### T-022 | 2026-10-18T08:18Z | phase 5
+- Source: MCP sec-review/sca_verify_packages
+- Why: Server workflow step 2 before writing UI code: verify the 24 direct npm packages. Versions are current from `npm view`, except TypeScript: 7.0.2 is latest, but typescript-eslint 8.71.2 requires `typescript >=4.8.4 <6.1.0`, so 6.0.3 is used.
+- Input: evaluation/raw/T-022.input.json
+- Output: `{"all_valid": true, "packages_checked": 24}`
+- Interpretation: Source: all names and versions exist.
+- Findings: none
+- Action: none needed
+- Changes: ui/package.json, ui/package-lock.json (commit filled in below)
+- Notes: Called in parallel with T-023.
+
+### T-023 | 2026-10-18T08:18Z | phase 5
+- Source: MCP sec-review/sca_scan_dependencies
+- Why: Server workflow step 2: CVE scan of the 24 direct npm packages.
+- Input: evaluation/raw/T-023.input.json
+- Output: `{"packages_scanned": 24, "vulnerable_count": 0, "status": "clean", ...}` (evaluation/raw/T-023.output.json)
+- Interpretation: Source: no known advisories.
+- Findings: none
+- Action: none needed
+- Changes: none
+- Notes: none
+
+### T-024 | 2026-10-18T08:20Z | phase 5
+- Source: MCP sec-review/sca_scan_dependencies
+- Why: Cover the transitive npm packages from `npm install` (278 unique name@version pairs, 254 of them transitive), first half.
+- Input: evaluation/raw/T-024.input.json (127 packages)
+- Output: `{"packages_scanned": 127, "vulnerable_count": 0, "status": "clean", ...}`
+- Interpretation: Source: no known advisories.
+- Findings: none
+- Action: none needed
+- Changes: none
+- Notes: none
+
+### T-025 | 2026-10-18T08:21Z | phase 5
+- Source: MCP sec-review/sca_scan_dependencies
+- Why: Second half of the transitive npm packages.
+- Input: evaluation/raw/T-025.input.json (127 packages)
+- Output: `{"packages_scanned": 127, "vulnerable_count": 0, "status": "clean", ...}`
+- Interpretation: Source: no known advisories for the full resolved UI tree.
+- Findings: none
+- Action: none needed
+- Changes: none
+- Notes: none
+
+### T-026 | 2026-10-18T08:55Z | phase 5
+- Source: MCP sec-review/general_verify_code_security
+- Why: Server workflow step 3 for the UI, with T-021's components.
+- Input: evaluation/raw/T-026.input.json
+- Output: evaluation/raw/T-026.output.json. Summary: review prompt, 19-item checklist, 12 focus areas; no findings of its own.
+- Interpretation: Following the prompt, I reviewed `ui/src` and `ui/views`; the review is in evaluation/raw/T-026.review.md: "Needs Attention (low)". R26-1: separate HMAC keys per purpose. R26-2: the trust-proxy hop count must be 1 behind the ALB. R26-3: in-memory uploads, accepted.
+- Findings: F-087, F-088, F-089
+- Action: applied (F-087 fixed, F-088 in phase 6/7, F-089 accepted)
+- Changes: see findings
+- Notes: The checklist again included N/A items (archives, JWT, client storage credentials, parameterized queries for a UI with no database).

@@ -1,0 +1,8 @@
+{
+  "tool": "mcp__sec-review__general_verify_code_security",
+  "arguments": {
+    "components": "browser-frontend,user-generated-content,session-management,web-endpoint,file-upload",
+    "data_handled": "credentials,personal_data",
+    "file_path": "ui/src, ui/views"
+  }
+}
