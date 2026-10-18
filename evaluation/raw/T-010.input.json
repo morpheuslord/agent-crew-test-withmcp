@@ -1,0 +1,9 @@
+{
+  "tool": "mcp__sec-review__general_lightweight_security_review",
+  "arguments": {
+    "task_description": "Implement the Taskboard FastAPI API core: SQLAlchemy 2 models and Alembic migrations for users, sessions, password reset tokens, outbox, teams, team members, projects, tasks, comments, attachments and activity events; repositories; services for auth (register, login, logout, change password, forgot/reset password with emails written to the log and an outbox table), admin user management, teams and members, projects, tasks, comments, search with client-supplied sort field/direction and filters, CSV export, activity feeds; FastAPI routers under /api/v1 with typed error mapping, structured JSON logging with request ids, and a create-admin management command.",
+    "components": "web-endpoint,database,logging-and-errors,email-sending,cryptography",
+    "data_handled": "credentials,personal_data",
+    "technologies": "Python 3.13, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, PostgreSQL 16, argon2-cffi"
+  }
+}

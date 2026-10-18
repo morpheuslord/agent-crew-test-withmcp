@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "review_type": "ai_powered_security_review",
+  "instructions": "IMPORTANT: You (the AI agent) must now perform the security review. The code is not included here: review the code you just wrote, which is already in your context, using the checklist and focus areas. Report all security issues found with severity ratings and fixes.",
+  "review_prompt": "## SECURITY CODE REVIEW REQUEST\n\n**File:** `api/src/taskboard`\n**Components:** file-upload, object-storage, outbound-http-request, background-job\n**Risk Level:** HIGH\n\n### Review Instructions\n\nReview the code you just wrote (it is already in your context) for security vulnerabilities. For each issue found:\n1. Identify the vulnerability type and severity (Critical/High/Medium/Low)\n2. Explain why it's a security risk\n3. Show the problematic code snippet\n4. Provide a secure code fix\n\n### Focus Areas\n\nPay special attention to:\n- An uploaded archive writes files outside the target folder when extracted\n- Long-lived storage keys are shipped to the browser or mobile app\n- One user reads or changes another user's data by changing an id in the request\n- Storage bucket is publicly listable or readable\n- Sensitive fields are stored unencrypted, so a backup or database leak exposes them\n- The server is tricked into fetching internal addresses or cloud metadata\n- Outbound calls skip certificate checks, so traffic can be intercepted\n- Attacker uploads a script that your server runs or serves\n- Attacker uses ../ in a filename to overwrite files\n- Unvalidated input reaches business logic and breaks assumptions\n- Queue messages are trusted without checking, so one bad message breaks the worker or the data\n- An uploaded SVG or HTML file runs script when other users open it\n\n### Security Checklist\n\nVerify each item and report violations:\n- [ ] Extract archives safely: Ignore paths inside archives, reject symlinks and entries that escape the target folder, and cap size and file count.\n- [ ] Give clients short-lived, narrowly scoped credentials: Issue pre-signed or token-exchanged credentials limited to one object or prefix. Never ship long-lived keys to clients.\n- [ ] Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.\n- [ ] Keep storage private and hand out short-lived signed URLs: Block public access on the bucket and issue signed URLs that expire in minutes.\n- [ ] Encrypt sensitive data at rest: Use AES-GCM or your cloud provider's managed encryption, with keys held outside the database.\n- [ ] Fetch only allow-listed destinations: Resolve the host, block private, loopback, and link-local ranges including cloud metadata, and prefer a fixed allow-list of hosts.\n- [ ] Do not follow redirects on server-side fetches: Disable automatic redirects, or re-validate each hop against the same allow-list.\n- [ ] Always verify TLS certificates: Never set verify=False or NODE_TLS_REJECT_UNAUTHORIZED=0. Add your private CA to the trust store if needed.\n- [ ] Allow only the file types you need: Check the extension and the real file content against an allow-list. Ignore the client's Content-Type.\n- [ ] Never use the user's filename or path: Generate your own filenames, store files outside the web root, and make sure uploads are never executed.\n- [ ] Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.\n- [ ] Validate job payloads like any other input: Check the schema of every queue message and drop or dead-letter anything that does not match.\n- [ ] Serve uploads so browsers cannot run them: Send the correct Content-Type, Content-Disposition attachment for downloads, nosniff, and serve user files from a separate domain.\n- [ ] Sanitize user-provided HTML: Run user HTML through a maintained sanitizer such as DOMPurify or bleach with a strict allow-list. Prefer markdown or plain text.\n- [ ] Limit file size and decompressed size: Set a maximum size per file, and cap decompressed size and file count for archives.\n- [ ] Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.\n- [ ] Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.\n- [ ] Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.\n- [ ] Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies.\n\n### Expected Response Format\n\nProvide your security review with:\n1. **Summary:** Overall assessment (Secure/Needs Attention/Insecure)\n2. **Findings:** List of security issues with severity and fixes\n3. **Checklist Results:** Which items pass/fail\n4. **Recommendations:** Prioritized list of actions",
+  "context": {
+    "file_path": "api/src/taskboard",
+    "components": [
+      "file-upload",
+      "object-storage",
+      "outbound-http-request",
+      "background-job"
+    ],
+    "risk_level": "high"
+  },
+  "security_checklist": [
+    "Extract archives safely: Ignore paths inside archives, reject symlinks and entries that escape the target folder, and cap size and file count.",
+    "Give clients short-lived, narrowly scoped credentials: Issue pre-signed or token-exchanged credentials limited to one object or prefix. Never ship long-lived keys to clients.",
+    "Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.",
+    "Keep storage private and hand out short-lived signed URLs: Block public access on the bucket and issue signed URLs that expire in minutes.",
+    "Encrypt sensitive data at rest: Use AES-GCM or your cloud provider's managed encryption, with keys held outside the database.",
+    "Fetch only allow-listed destinations: Resolve the host, block private, loopback, and link-local ranges including cloud metadata, and prefer a fixed allow-list of hosts.",
+    "Do not follow redirects on server-side fetches: Disable automatic redirects, or re-validate each hop against the same allow-list.",
+    "Always verify TLS certificates: Never set verify=False or NODE_TLS_REJECT_UNAUTHORIZED=0. Add your private CA to the trust store if needed.",
+    "Allow only the file types you need: Check the extension and the real file content against an allow-list. Ignore the client's Content-Type.",
+    "Never use the user's filename or path: Generate your own filenames, store files outside the web root, and make sure uploads are never executed.",
+    "Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.",
+    "Validate job payloads like any other input: Check the schema of every queue message and drop or dead-letter anything that does not match.",
+    "Serve uploads so browsers cannot run them: Send the correct Content-Type, Content-Disposition attachment for downloads, nosniff, and serve user files from a separate domain.",
+    "Sanitize user-provided HTML: Run user HTML through a maintained sanitizer such as DOMPurify or bleach with a strict allow-list. Prefer markdown or plain text.",
+    "Limit file size and decompressed size: Set a maximum size per file, and cap decompressed size and file count for archives.",
+    "Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.",
+    "Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.",
+    "Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.",
+    "Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies."
+  ],
+  "focus_areas": [
+    "An uploaded archive writes files outside the target folder when extracted",
+    "Long-lived storage keys are shipped to the browser or mobile app",
+    "One user reads or changes another user's data by changing an id in the request",
+    "Storage bucket is publicly listable or readable",
+    "Sensitive fields are stored unencrypted, so a backup or database leak exposes them",
+    "The server is tricked into fetching internal addresses or cloud metadata",
+    "Outbound calls skip certificate checks, so traffic can be intercepted",
+    "Attacker uploads a script that your server runs or serves",
+    "Attacker uses ../ in a filename to overwrite files",
+    "Unvalidated input reaches business logic and breaks assumptions",
+    "Queue messages are trusted without checking, so one bad message breaks the worker or the data",
+    "An uploaded SVG or HTML file runs script when other users open it"
+  ],
+  "expected_response": {
+    "format": "structured_security_review",
+    "required_sections": [
+      "overall_assessment",
+      "findings_list",
+      "checklist_results",
+      "recommended_fixes"
+    ]
+  }
+}

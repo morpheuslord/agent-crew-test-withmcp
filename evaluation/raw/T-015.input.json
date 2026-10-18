@@ -1,0 +1,7 @@
+{
+  "tool": "mcp__sec-review__general_verify_code_security",
+  "arguments": {
+    "components": "file-upload,object-storage,outbound-http-request,background-job",
+    "file_path": "api/src/taskboard"
+  }
+}

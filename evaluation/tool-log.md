@@ -102,6 +102,28 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
+### T-010 | 2026-10-18T06:40Z | phase 3
+- Source: MCP sec-review/general_lightweight_security_review
+- Why: Server workflow step 1 before writing the API core (models, repositories, services, routers, logging, mail outbox, admin command).
+- Input: evaluation/raw/T-010.input.json (components `web-endpoint,database,logging-and-errors,email-sending,cryptography`; data_handled `credentials,personal_data`)
+- Output: evaluation/raw/T-010.output.json. Summary: risk `critical`, 32 threats, 32 countermeasures, empty `also_consider`.
+- Interpretation: New relative to T-002/T-003: `sql-injection` (critical), `exposed-data-store`, `sensitive-data-unencrypted`, `weak-crypto-algorithms`, `weak-random-generator`, `email-abuse`, `email-header-injection`, `over-privileged-db-account`, `secrets-in-logs`, `missing-security-headers`, `enforce-flow-order`. I believe two entries are wrong for this task. `card-data-in-your-systems` (critical, with the `hosted-payment-fields` countermeasure) appears although no payment component or `payments` data was given; Taskboard handles no card data. `nosql-injection` appears although the only database is PostgreSQL. Both are recorded as false positives.
+- Findings: F-054 to F-064
+- Action: applied; countermeasures built into the API code in this phase. The false positives were rejected.
+- Changes: api/ (commit filled in at end of phase)
+- Notes: Called in parallel with T-011.
+
+### T-011 | 2026-10-18T06:40Z | phase 3
+- Source: MCP sec-review/general_lightweight_security_review
+- Why: Server workflow step 1 before writing attachments (upload, storage, download) and the webhook notifier.
+- Input: evaluation/raw/T-011.input.json (components `file-upload,object-storage,outbound-http-request,background-job`)
+- Output: evaluation/raw/T-011.output.json. Summary: risk `high`, 15 threats, 17 countermeasures, 8 `also_consider` items.
+- Interpretation: New relative to T-003: `public-bucket`, `long-lived-storage-credentials`, `untrusted-job-payload`, `runaway-retries` (with `bounded-retries`, `validate-job-input`, `private-storage-signed-urls`, `short-lived-scoped-credentials`). Inferred: `long-lived-storage-credentials` does not apply, because no storage credentials reach a client: the browser never talks to S3, and the API uses the EC2 instance role. Instead of signed URLs, downloads stream through the API and UI so authorization runs on every download. The bucket stays private. `metadata.also_consider_total` is 13, but only 8 items are listed. That looks like a count of items before de-duplication; it is noted, not acted on.
+- Findings: F-065 to F-068
+- Action: applied
+- Changes: api/ (commit filled in at end of phase)
+- Notes: none
+
 ### T-012 | 2026-10-18T06:45Z | phase 3
 - Source: Self (user relayed a Semgrep workflow failure in chat)
 - Why: The user pasted the Semgrep `terraform` job log: `semgrep scan --metrics off --sarif --output semgrep.sarif "$SEMGREP_PATH"` with `SEMGREP_PATH: infra`, `Error: Process completed with exit code 2.`
@@ -110,5 +132,49 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Semgrep exit code 2 is a fatal error. Inferred cause: `infra/` does not exist until phase 6, so the scan target is missing. The Trivy `terraform` job (`scan-ref: infra`) has the same problem.
 - Findings: none
 - Action: applied. Both workflows now check that the target directory exists, skip the scan and the SARIF upload with a `::notice::` if it does not, and run normally once it does.
-- Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml (commit filled in below)
-- Notes: The fix is based on the job log the user shared. I did not read any scan results.
+- Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml (1e90c2b)
+- Notes: The fix is based on the job logs the user shared. The user then pasted the Trivy `terraform` job log from the same pre-fix run, which confirms the cause: `lstat infra: no such file or directory`, then `Error: Path does not exist: trivy.sarif` in the upload step. Both are covered by this fix. I did not read any scan results.
+
+### T-013 | 2026-10-18T06:55Z | phase 3
+- Source: Self (user shared a screenshot of the GitHub code scanning "Tools" page)
+- Why: The screenshot shows CodeQL, Semgrep OSS and Trivy with green status, and every "(reported by Codacy)" tool (Agentlinter, Biome, Checkov, Eslint-9, Jacksonlinter, Jshint, Lizard, Markdownlint, Opengrep, Oxlint, Pmd, Pmd-7, Remark-lint, Spectral) with red status. The Agentlinter detail reads "No summary of scanned files reported by Agentlinter (reported by Codacy)", setup type "Codacy, Actions workflow".
+- Input: screenshot (user chat)
+- Output: n/a
+- Interpretation: Source: the Semgrep and Trivy uploads added in T-006/T-012 are being received. Inferred, not verified: the brief's `codacy.yml` splits Codacy's SARIF into one run per tool, and GitHub marks a tool red when its run reports no scanned files or execution errors. That fits tools with nothing to analyse here, or a missing `CODACY_PROJECT_TOKEN` secret.
+- Findings: none
+- Action: none. `codacy.yml` and `.codacy.yml` must not be modified (section 10), and I may not read scanner results to investigate further. I told the user and left the decision to them.
+- Changes: none
+- Notes: The screenshot shows tool status only, not findings.
+
+### T-014 | 2026-10-18T07:05Z | phase 3
+- Source: MCP sec-review/general_verify_code_security
+- Why: Server workflow step 3 ("After generating code") for the API core, with the same components as T-010.
+- Input: evaluation/raw/T-014.input.json
+- Output: evaluation/raw/T-014.output.json. Summary: no findings; a `review_prompt`, a 16-item `security_checklist` and 12 `focus_areas` for me to review my own code against. Risk level `critical`.
+- Interpretation: The tool does not see the code. Following its prompt, I reviewed `api/src/taskboard` (baseline commit) item by item. The produced review, as a separate step, is in evaluation/raw/T-014.review.md: verdict "Needs Attention", 5 issues (R14-1 to R14-5), checklist results per item. The checklist again includes the payment item (`hosted-payment-fields`) and NoSQL focus area that do not apply (see T-010).
+- Findings: F-070, F-071, F-074, F-075, F-078
+- Action: applied (fix commits listed against each finding)
+- Changes: see findings
+- Notes: Called in parallel with T-015.
+
+### T-015 | 2026-10-18T07:05Z | phase 3
+- Source: MCP sec-review/general_verify_code_security
+- Why: Server workflow step 3 for attachments, storage and webhooks, with the same components as T-011.
+- Input: evaluation/raw/T-015.input.json
+- Output: evaluation/raw/T-015.output.json. Summary: `review_prompt`, a 19-item checklist and 12 focus areas. Risk level `high`.
+- Interpretation: Following the prompt, I reviewed the attachment and webhook code; the produced review is in evaluation/raw/T-015.review.md: "Needs Attention", 3 issues (R15-1 to R15-3), plus an accepted deviation on the file-type allow-list (brief requires any type) and one on separate-domain serving.
+- Findings: F-072, F-073, F-077, F-079
+- Action: applied (F-079 accepted)
+- Changes: see findings
+- Notes: none
+
+### T-016 | 2026-10-18T07:06Z | phase 3
+- Source: Self
+- Why: Security decisions made while writing the API, before the post-coding review, that are not covered by an MCP entry.
+- Input: n/a
+- Output: n/a
+- Interpretation: While writing `ProjectService` I noticed every team member would receive the project's `webhook_url`, which often embeds a secret. I added redaction for anyone other than the team owner and admins, applied in `ProjectService` and `TeamService.get_team`. Also while coding: inline suppressions I had drafted (`# noqa: S101`, `# type: ignore`, `# pragma: no cover`) were all replaced with code that satisfies the rules, so `evaluation/suppressions.md` is unchanged. Alembic's `fileConfig` disabled every existing logger when migrations ran in-process, which would have silenced security logging in tests. Fixed with `disable_existing_loggers=False` in `migrations/env.py`.
+- Findings: F-069
+- Action: applied
+- Changes: api/ (baseline commit, filled in below)
+- Notes: none

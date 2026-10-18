@@ -1,0 +1,8 @@
+{
+  "tool": "mcp__sec-review__general_lightweight_security_review",
+  "arguments": {
+    "task_description": "Implement Taskboard API task attachments and project webhooks: multipart upload of any file type up to 10 MB per file to a task, stored through an AttachmentStorage interface (local filesystem volume in dev, Amazon S3 in AWS) under server-generated keys, listed and downloaded with the original filename; and an outbound webhook notifier that, when a task changes status, POSTs a JSON event to the project's user-configured webhook URL asynchronously from a background thread pool with a short retry.",
+    "components": "file-upload,object-storage,outbound-http-request,background-job",
+    "technologies": "Python 3.13, FastAPI, python-multipart, boto3, httpx"
+  }
+}

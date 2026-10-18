@@ -1,0 +1,107 @@
+{
+  "tool": "mcp__sec-review__sca_verify_packages",
+  "arguments": {
+    "packages_json": [
+      {
+        "name": "fastapi",
+        "version": "0.143.3",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "uvicorn",
+        "version": "0.54.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.14.1",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "pydantic-settings",
+        "version": "2.16.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "sqlalchemy",
+        "version": "2.1.5",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "alembic",
+        "version": "1.20.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "psycopg",
+        "version": "3.3.6",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "psycopg-binary",
+        "version": "3.3.6",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "redis",
+        "version": "8.1.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "argon2-cffi",
+        "version": "25.1.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "python-multipart",
+        "version": "0.0.32",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "httpx",
+        "version": "0.28.1",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "boto3",
+        "version": "1.43.114",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "email-validator",
+        "version": "2.3.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "pytest",
+        "version": "9.1.1",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "pytest-cov",
+        "version": "7.1.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "mypy",
+        "version": "2.4.0",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "ruff",
+        "version": "0.17.1",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "boto3-stubs",
+        "version": "1.43.114",
+        "ecosystem": "pypi"
+      },
+      {
+        "name": "moto",
+        "version": "5.2.4",
+        "ecosystem": "pypi"
+      }
+    ]
+  }
+}

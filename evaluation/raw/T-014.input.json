@@ -1,0 +1,8 @@
+{
+  "tool": "mcp__sec-review__general_verify_code_security",
+  "arguments": {
+    "components": "web-endpoint,database,logging-and-errors,email-sending,cryptography",
+    "data_handled": "credentials,personal_data",
+    "file_path": "api/src/taskboard"
+  }
+}
