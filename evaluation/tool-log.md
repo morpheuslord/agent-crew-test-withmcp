@@ -341,7 +341,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: New relative to earlier entries: `hallucinated-package`, `typosquatted-package`, `vulnerable-dependency` (with `verify-packages-exist`, `pin-and-lock-dependencies`, `scan-and-update-dependencies`). Applied: lockfiles committed; frozen installs in Dockerfiles and CI (`uv sync --frozen`, `npm ci --ignore-scripts`); all packages were verified and scanned (T-007–T-009, T-022–T-025). `over-privileged-db-account` (F-062) is implemented in this phase with the `taskboard-admin migrate` role setup. `container-runs-as-root` (F-094): non-root images.
 - Findings: F-099, F-100
 - Action: applied
-- Changes: (phase 7 baseline commit, filled in below)
+- Changes: cad3a6b
 - Notes: Logged after T-031 in time order; T-031 was a user-relayed Codacy log handled in between.
 
 ### T-032 | 2026-10-18T09:40Z | phase 7
