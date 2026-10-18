@@ -321,3 +321,36 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied (F-090 fixed; F-091/F-092 accepted)
 - Changes: see findings
 - Notes: Checks run before the review: `terraform fmt -check -recursive` and `terraform init -backend=false` + `terraform validate` both pass. While writing the env I also found and removed a module-level `depends_on` that would have created a dependency cycle at plan time (UI SSM parameters → API internal LB → UI security group). It was replaced by a `config_version` input on the launch templates.
+
+### T-031 | 2026-10-18T09:20Z | phase 7
+- Source: Self (user pasted a Codacy job log excerpt)
+- Why: Log shows `Failed analysis for trivy ... codacy-trivy/tool: Failed to configure Codacy Trivy: no patterns configured`, followed by the opengrep, duplication, metrics and jshint steps running.
+- Input: pasted log (user chat); workflow run status metadata from the Actions API: d752092, c325100 and 36cdbbb `completed success`; 545e457 (the run the log came from) in progress.
+- Output: n/a
+- Interpretation: Source: Codacy's bundled Trivy plugin has no pattern configuration without a Codacy project configuration, so it fails. Inferred: this does not fail the job, because earlier runs with the same plugin succeeded. Its output is also not uploaded, since `trivy` is not in `CODACY_TOOLS`. Trivy itself runs in `.github/workflows/trivy.yml`.
+- Findings: none
+- Action: none needed; explained to the user
+- Changes: none
+- Notes: none
+
+### T-030 | 2026-10-18T09:15Z | phase 7
+- Source: MCP sec-review/general_lightweight_security_review
+- Why: Server workflow step 1 before writing Dockerfiles, Compose, Makefile, smoke test, CI and the DB role command.
+- Input: evaluation/raw/T-030.input.json (components `container-and-iac,secrets-and-config,database,dependencies`; data_handled `secrets`)
+- Output: evaluation/raw/T-030.output.json. Summary: risk `critical`, 20 threats, 20 countermeasures.
+- Interpretation: New relative to earlier entries: `hallucinated-package`, `typosquatted-package`, `vulnerable-dependency` (with `verify-packages-exist`, `pin-and-lock-dependencies`, `scan-and-update-dependencies`). Applied: lockfiles committed; frozen installs in Dockerfiles and CI (`uv sync --frozen`, `npm ci --ignore-scripts`); all packages were verified and scanned (T-007–T-009, T-022–T-025). `over-privileged-db-account` (F-062) is implemented in this phase with the `taskboard-admin migrate` role setup. `container-runs-as-root` (F-094): non-root images.
+- Findings: F-099, F-100
+- Action: applied
+- Changes: (phase 7 baseline commit, filled in below)
+- Notes: Logged after T-031 in time order; T-031 was a user-relayed Codacy log handled in between.
+
+### T-032 | 2026-10-18T09:40Z | phase 7
+- Source: MCP sec-review/general_verify_code_security
+- Why: Server workflow step 3 for the phase 7 files, with T-030's components.
+- Input: evaluation/raw/T-032.input.json
+- Output: evaluation/raw/T-032.output.json. Summary: review prompt, 17-item checklist, 12 focus areas. The raw file was written from the response by a script that rebuilt the JSON from its literal field values, rather than retyped by hand. Content is identical; whitespace and key order follow the response.
+- Interpretation: Following the prompt, I reviewed the phase 7 files; the review is in evaluation/raw/T-032.review.md: "Secure with minor items". R32-1 (low): CI actions referenced by mutable tags, to be pinned by SHA. R32-2 to R32-4 accepted.
+- Findings: F-095, F-096, F-097, F-098
+- Action: applied (F-095 fixed; others accepted)
+- Changes: see findings
+- Notes: Verified before the review: `make up` (Compose via Podman), `make smoke` (SMOKE PASSED), `make lint`, `make typecheck`, `make tf-check`, `make test` (API 118 tests, 96.78% coverage; UI 62 tests, 96.6% lines). Problems found and fixed on the way: Podman OCI builds drop Dockerfile `HEALTHCHECK`, so healthchecks are also declared in Compose; the Makefile test teardown used a relative path after `cd api`; a unit test leaked `MIGRATION_DATABASE_URL` from the integration tests.

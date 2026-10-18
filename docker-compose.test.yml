@@ -1,0 +1,29 @@
+# Throwaway PostgreSQL and Redis for the API integration tests (`make test`). Separate project,
+# bound to the loopback interface only, never used by the application stack.
+name: taskboard-test
+
+services:
+  postgres:
+    image: postgres:16.15-alpine3.24
+    environment:
+      POSTGRES_USER: taskboard_test
+      POSTGRES_PASSWORD: taskboard_test
+      POSTGRES_DB: taskboard_test
+    ports:
+      - "127.0.0.1:${TEST_PG_PORT:-55432}:5432"
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskboard_test -d taskboard_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7.4.11-alpine3.21
+    ports:
+      - "127.0.0.1:${TEST_REDIS_PORT:-56379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

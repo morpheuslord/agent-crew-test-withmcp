@@ -1,0 +1,10 @@
+# Only what the image needs; never secrets, VCS data, caches or local environments.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!src/
+!alembic.ini
+!migrations/
+**/__pycache__
+**/*.pyc

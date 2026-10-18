@@ -1,0 +1,9 @@
+{
+  "tool": "mcp__sec-review__general_lightweight_security_review",
+  "arguments": {
+    "task_description": "Integrate Taskboard for local development and CI: multi-stage Dockerfiles for the Python API (uv, python slim) and the Node UI (node alpine) running as non-root; a docker-compose.yml running ui, api, a one-shot migrate job, PostgreSQL 16 and Redis 7 where only the UI port is published; a least-privilege PostgreSQL application role created by a management command; a .env.example with placeholder secrets; a Makefile; a bash smoke test that drives the UI with curl (register, login, CSRF tokens, upload/download); and a GitHub Actions CI workflow running lint, type checks, tests with PostgreSQL and Redis service containers, and Terraform checks.",
+    "components": "container-and-iac,secrets-and-config,database,dependencies",
+    "data_handled": "secrets",
+    "technologies": "Docker, Docker Compose, GitHub Actions, uv, npm, PostgreSQL 16, Redis 7, bash"
+  }
+}

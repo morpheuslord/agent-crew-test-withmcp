@@ -1,0 +1,140 @@
+# Local stack. Only the UI is published, and only on the loopback interface; the API, PostgreSQL
+# and Redis are reachable only on internal networks (as in AWS). Secrets come from .env, which
+# `make up` generates from .env.example on first run.
+name: taskboard
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+services:
+  postgres:
+    image: postgres:16.15-alpine3.24
+    environment:
+      POSTGRES_USER: taskboard_owner
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?set POSTGRES_OWNER_PASSWORD in .env}
+      POSTGRES_DB: taskboard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskboard_owner -d taskboard"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.11-alpine3.21
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+      - --maxmemory
+      - 128mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # One-shot: applies migrations as the owner and (re)creates the least-privilege app role.
+  migrate:
+    <<: *hardening
+    build: ./api
+    image: taskboard-api:local
+    command: ["taskboard-admin", "migrate"]
+    environment:
+      MIGRATION_DATABASE_URL: postgresql+psycopg://taskboard_owner:${POSTGRES_OWNER_PASSWORD}@postgres:5432/taskboard
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
+    tmpfs: [/tmp]
+    networks: [data]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *hardening
+    build: ./api
+    image: taskboard-api:local
+    environment:
+      ENVIRONMENT: development
+      LOG_LEVEL: ${API_LOG_LEVEL:-INFO}
+      DATABASE_URL: postgresql+psycopg://taskboard_app:${DB_APP_PASSWORD}@postgres:5432/taskboard
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?set SERVICE_AUTH_SECRET in .env}
+      WEBHOOK_SIGNING_SECRET: ${WEBHOOK_SIGNING_SECRET:?set WEBHOOK_SIGNING_SECRET in .env}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}
+      STORAGE_BACKEND: local
+      STORAGE_LOCAL_PATH: /data/attachments
+    volumes:
+      - attachments:/data/attachments
+    tmpfs: [/tmp]
+    # Declared here as well as in the Dockerfile: OCI-format builds (e.g. Podman) drop HEALTHCHECK.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=2).status == 200 else 1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    # `egress` lets webhooks leave the host; `app` and `data` are internal-only networks.
+    networks: [app, data, egress]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ui:
+    <<: *hardening
+    build: ./ui
+    image: taskboard-ui:local
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      API_BASE_URL: http://api:8000
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in .env}
+      # Plain HTTP on localhost; in AWS the ALB terminates TLS and this is true.
+      COOKIE_SECURE: "false"
+      TRUST_PROXY_HOPS: "0"
+      LOG_LEVEL: ${UI_LOG_LEVEL:-info}
+    ports:
+      - "127.0.0.1:${UI_PORT:-3000}:3000"
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks: [edge, app]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  edge: {}
+  egress: {}
+  app:
+    internal: true
+  data:
+    internal: true
+
+volumes:
+  pgdata: {}
+  attachments: {}
