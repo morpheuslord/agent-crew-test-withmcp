@@ -1,6 +1,7 @@
 """Pure ASGI middleware: request id and access log, security headers, and a body size cap."""
 
 import logging
+import re
 import time
 from typing import Final
 
@@ -61,19 +62,32 @@ class RequestContextMiddleware:
             )
 
 
-class BodySizeLimitMiddleware:
-    """Rejects request bodies above ``max_bytes``, whether or not Content-Length is sent."""
+_UPLOAD_PATH: Final = re.compile(r"^/api/v1/tasks/[^/]+/attachments$")
 
-    def __init__(self, app: ASGIApp, max_bytes: int) -> None:
+
+class BodySizeLimitMiddleware:
+    """Rejects oversized request bodies, whether or not Content-Length is sent.
+
+    Only the attachment upload route may send large bodies; every other route gets ``max_bytes``.
+    """
+
+    def __init__(self, app: ASGIApp, max_bytes: int, upload_max_bytes: int) -> None:
         self.app = app
         self.max_bytes = max_bytes
+        self.upload_max_bytes = upload_max_bytes
+
+    def _limit_for(self, scope: Scope) -> int:
+        if scope.get("method") == "POST" and _UPLOAD_PATH.match(scope.get("path", "")):
+            return self.upload_max_bytes
+        return self.max_bytes
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+        limit = self._limit_for(scope)
         declared = dict(scope.get("headers", [])).get(b"content-length")
-        if declared is not None and declared.isdigit() and int(declared) > self.max_bytes:
+        if declared is not None and declared.isdigit() and int(declared) > limit:
             await _reject(send)
             return
         received = 0
@@ -83,7 +97,7 @@ class BodySizeLimitMiddleware:
             message = await receive()
             if message["type"] == "http.request":
                 received += len(message.get("body", b""))
-                if received > self.max_bytes:
+                if received > limit:
                     raise PayloadTooLargeError("The request body is too large.")
             return message
 

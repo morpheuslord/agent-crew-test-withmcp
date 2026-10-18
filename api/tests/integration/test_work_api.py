@@ -319,3 +319,12 @@ def test_webhook_url_must_be_public_https(api: Api) -> None:
             "PATCH", f"/projects/{w['project']['id']}", w["owner_token"], json={"webhook_url": url}
         )
         assert response.status_code == 422, url
+
+
+def test_json_routes_reject_large_bodies(api: Api) -> None:
+    w = _team_with_project(api)
+    big = {"title": "x", "description": "y" * 300_000}
+    response = api.call(
+        "POST", f"/projects/{w['project']['id']}/tasks", w["member_token"], json=big
+    )
+    assert response.status_code == 413

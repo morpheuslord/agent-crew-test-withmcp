@@ -18,6 +18,8 @@ from taskboard.logging_setup import configure_logging
 API_PREFIX = "/api/v1"
 # Multipart framing around a maximum-size file.
 _MULTIPART_OVERHEAD = 64 * 1024
+# Every JSON body in the API is far smaller than this.
+_JSON_BODY_LIMIT = 256 * 1024
 
 
 def create_app(settings: Settings | None = None, infra: Infrastructure | None = None) -> FastAPI:
@@ -54,7 +56,9 @@ def create_app(settings: Settings | None = None, infra: Infrastructure | None = 
 
     register_error_handlers(app)
     app.add_middleware(
-        BodySizeLimitMiddleware, max_bytes=settings.max_upload_bytes + _MULTIPART_OVERHEAD
+        BodySizeLimitMiddleware,
+        max_bytes=_JSON_BODY_LIMIT,
+        upload_max_bytes=settings.max_upload_bytes + _MULTIPART_OVERHEAD,
     )
     app.add_middleware(RequestContextMiddleware)
     return app
