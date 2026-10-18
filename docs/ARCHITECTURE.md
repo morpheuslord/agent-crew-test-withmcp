@@ -113,8 +113,9 @@ sequenceDiagram
   creates a `secrets.token_urlsafe(32)` token, stores its SHA-256 with a 30-minute expiry, and "sends" an email whose
   link is built from the configured `PUBLIC_BASE_URL` (never from request headers). Emails go to the API log and the
   `outbox` table. A token works once; using it sets the new password and revokes every session.
-- **Rate limits.** Login: 5 failures per email and 20 attempts per client IP per 15 minutes. Forgot-password and
-  register: per client IP. Counters live in Redis and fall back to an in-process limiter if Redis is down.
+- **Rate limits.** Login: 5 failures per email and client IP, 50 failures per email from any client, and 20
+  attempts per client IP per 15 minutes (F-070). Forgot-password: per client IP and per email. Register: per client IP.
+  Failed current-password checks on password change: 5 per user (F-075). Counters live in Redis and fall back to an in-process limiter if Redis is down.
 - **Roles.** `member` (default at registration) and `admin`. Admins are created only by the `create-admin`
   management command (email and password from environment variables) or promoted by another admin. Admins cannot
   demote or deactivate themselves.
@@ -262,24 +263,45 @@ behind the service token like every other `/api/v1` route; there is no interacti
 
 ## Caching
 
-Cache-aside in the API through a `Cache` interface with `RedisCache`, `InMemoryCache` (tests) and `NullCache`
-implementations. Values are JSON, never pickled.
+Cache-aside in the API (`services/caching.py`) through a `Cache` interface (`infra/cache/base.py`) with `RedisCache`,
+`InMemoryCache` (unit tests) and `NullCache` (no `REDIS_URL`) implementations. Values are JSON written and read by
+Pydantic `TypeAdapter`s and never pickled. Malformed entries are discarded and reloaded. Keys are built only from
+UUIDs and a SHA-256 digest of the filter, never from raw client text.
 
-| Key | Contents | Invalidated by |
-| --- | --- | --- |
-| `user:{id}` | user profile | password change, role change, activation change |
-| `user:{id}:teams` | the user's teams | team created, member added or removed (for that user) |
-| `user:{id}:projects` | the user's projects | project created, renamed or archived (all team members), member added or removed |
-| `task:{id}` | task detail | task updated or deleted |
-| `project:{id}:tasks:v{n}:{hash(filters)}` | one page of a project's task list for one filter/sort/page combination | any task write in the project increments `project:{id}:tasks:ver`, so every older combination becomes unreachable |
+| Key (prefix `tb:v1:`) | Contents | Read by | Invalidated by |
+| --- | --- | --- | --- |
+| `user:{id}` | profile (display fields) | `AuthService.authenticate` | role or active change, admin provisioning |
+| `user:{id}:teams` | the user's teams | `GET /teams` | team created (owner), member added or removed (that user) |
+| `user:{id}:projects` | projects in the user's teams | `GET /projects` | project created, renamed, webhook changed or archived (all team members); member added or removed (that user) |
+| `task:{id}` | task detail | `GET /tasks/{id}` | task updated or deleted |
+| `project:{id}:tasks:v{n}:{digest}` | one page of a project's task list for one filter/sort/page combination | `GET /projects/{id}/tasks` | any task create, update or delete in the project bumps `project:{id}:tasks:ver` |
 
-- Authorization always runs against the database before a cached value is returned, so a stale entry can never widen
-  access.
-- TTL (`CACHE_TTL_SECONDS`, default 300) is only a backstop.
-- Every write invalidates its keys after the database commit.
-- Hits and misses are logged at debug level, and per-family counters are exposed at `GET /api/v1/admin/cache/stats`.
-- Every Redis operation is wrapped: on a Redis error the cache logs a warning and behaves as a miss (reads) or no-op
-  (writes), so the API keeps working without Redis.
+```mermaid
+flowchart LR
+  R[read request] --> AZ{authorize against PostgreSQL}
+  AZ -- denied --> E[404 / 403]
+  AZ -- allowed --> C{Redis GET}
+  C -- hit --> OK[response]
+  C -- miss or Redis down --> DB[(PostgreSQL)] --> S[Redis SET with TTL] --> OK
+  W[write request] --> TX[commit] --> INV[delete keys / bump list version] --> OK2[response]
+```
+
+- **Authorization never trusts the cache.** Team, project and task-list reads check membership in PostgreSQL first.
+  `GET /tasks/{id}` reads the cached task, then checks membership of its project in PostgreSQL; a task never changes
+  project. The session lookup, role and active flag are read from PostgreSQL on every request in one indexed join, and
+  only display fields come from the cached profile. A cache-aside race therefore cannot keep a demoted admin's role
+  alive (F-080).
+- **Invalidation happens after the database commit**, so nothing uncommitted is ever cached or announced. The TTL
+  (`CACHE_TTL_SECONDS`, default 300) is a backstop.
+- **Task lists use versioned keys** (ADR-008). If the version key is missing it starts from a nanosecond timestamp, so
+  a lost or evicted version key never brings an older version number back.
+- **Degraded mode.** Every Redis call is wrapped: an error logs a warning and acts as a miss (reads) or no-op (writes).
+  The API keeps working without Redis, and `/readyz` reports `redis: degraded` while staying ready.
+- **Observability.** Hits and misses are logged at debug level with the key family (never the key or value). Per-family
+  `hits`, `misses` and `errors` counters for the process are returned by `GET /api/v1/admin/cache/stats` (admin only).
+- **Known trade-offs.** A user removed from a team may still see that team's and its projects' names in their own
+  lists for up to one TTL (F-081, accepted). Cached project lists include webhook URLs, which is why ElastiCache is
+  encrypted in transit and at rest and requires auth (F-082).
 
 ## Outbound webhooks
 
