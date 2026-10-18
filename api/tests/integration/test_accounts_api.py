@@ -177,6 +177,6 @@ def test_admin_user_management(
 
 def test_openapi_document_requires_service_token(api: Api) -> None:
     assert api.client.get("/api/v1/openapi.json").status_code == 401
-    assert api.client.get("/api/v1/docs").status_code == 401
+    assert api.call("GET", "/docs").status_code == 404
     document = api.call("GET", "/openapi.json").json()
     assert "/api/v1/search/tasks" in document["paths"]
