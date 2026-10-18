@@ -3,7 +3,9 @@
 import hashlib
 import hmac
 import json
-from collections.abc import Callable
+import threading
+import time
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -213,3 +215,58 @@ def test_null_notifier_and_default_client() -> None:
     with notifier._default_client() as client:
         assert client.follow_redirects is False
     notifier.shutdown()
+
+
+def test_backlog_is_bounded() -> None:
+    gate = threading.Event()
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        gate.wait(5)
+        return httpx.Response(204)
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    notifier = HttpWebhookNotifier(
+        policy=_strict("93.184.215.14"),
+        signing_secret=SECRET,
+        timeout_seconds=1.0,
+        max_attempts=1,
+        client_factory=lambda: httpx.Client(transport=httpx.MockTransport(handler)),
+        executor=executor,
+        max_pending=1,
+    )
+    notifier.notify("https://hooks.example.test/in", _event())
+    notifier.notify("https://hooks.example.test/in", _event())
+    gate.set()
+    executor.shutdown(wait=True)
+    assert len(calls) == 1
+
+
+class _SlowStream(httpx.SyncByteStream):
+    def __iter__(self) -> Iterator[bytes]:
+        for _ in range(5):
+            time.sleep(0.05)
+            yield b"x"
+
+
+def test_slow_drip_responses_hit_the_attempt_deadline() -> None:
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(200, stream=_SlowStream())
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    notifier = HttpWebhookNotifier(
+        policy=_strict("93.184.215.14"),
+        signing_secret=SECRET,
+        timeout_seconds=0.05,
+        max_attempts=2,
+        client_factory=lambda: httpx.Client(transport=httpx.MockTransport(handler)),
+        executor=executor,
+        backoff_seconds=0.0,
+    )
+    notifier.notify("https://hooks.example.test/in", _event())
+    executor.shutdown(wait=True)
+    assert len(calls) == 2

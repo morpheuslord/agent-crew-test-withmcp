@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import logging
+import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -45,6 +46,7 @@ class HttpWebhookNotifier:
         client_factory: Callable[[], httpx.Client] | None = None,
         executor: ThreadPoolExecutor | None = None,
         backoff_seconds: float = 0.5,
+        max_pending: int = 500,
     ) -> None:
         self._policy = policy
         self._secret = signing_secret
@@ -53,6 +55,8 @@ class HttpWebhookNotifier:
         self._backoff = backoff_seconds
         self._executor = executor or ThreadPoolExecutor(max_workers=4, thread_name_prefix="webhook")
         self._client_factory = client_factory or self._default_client
+        # The executor's queue is unbounded; this caps queued plus running deliveries.
+        self._pending = threading.BoundedSemaphore(max_pending)
 
     def _default_client(self) -> httpx.Client:
         # verify=True (default), no redirects, short timeouts, no proxies from the environment.
@@ -63,8 +67,14 @@ class HttpWebhookNotifier:
         )
 
     def notify(self, url: str, event: StatusChangedEvent) -> None:
+        if not self._pending.acquire(blocking=False):
+            logger.warning(
+                "webhook backlog full, event dropped", extra={"task_id": str(event.task_id)}
+            )
+            return
         request_id = request_id_var.get()
-        self._executor.submit(self._deliver, url, event, request_id)
+        future = self._executor.submit(self._deliver, url, event, request_id)
+        future.add_done_callback(lambda _: self._pending.release())
 
     def shutdown(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
@@ -109,11 +119,16 @@ class HttpWebhookNotifier:
                     extensions=extensions,
                 ) as response,
             ):
+                # Per-read timeouts alone let a slow-drip receiver hold a worker indefinitely.
+                deadline = time.monotonic() + 2 * self._timeout
                 received = 0
                 for chunk in response.iter_bytes():
                     received += len(chunk)
                     if received > MAX_RESPONSE_BYTES:
                         break
+                    if time.monotonic() > deadline:
+                        logger.info("webhook attempt timed out", extra={"attempt": attempt})
+                        return False
                 ok = 200 <= response.status_code < 300
                 logger.info(
                     "webhook delivered" if ok else "webhook rejected by receiver",
