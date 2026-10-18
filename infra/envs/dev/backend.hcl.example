@@ -1,0 +1,9 @@
+# Copy to backend.hcl (git-ignored) and run: terraform init -backend-config=backend.hcl
+# The state contains generated secrets: use a private, versioned bucket with SSE-KMS and
+# restrict access to the deploy role.
+bucket       = "example-terraform-state-bucket"
+key          = "taskboard/dev/terraform.tfstate"
+region       = "eu-west-1"
+encrypt      = true
+kms_key_id   = "arn:aws:kms:eu-west-1:111111111111:key/00000000-0000-0000-0000-000000000000"
+use_lockfile = true

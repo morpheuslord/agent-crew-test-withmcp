@@ -288,3 +288,36 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied (F-087 fixed, F-088 in phase 6/7, F-089 accepted)
 - Changes: see findings
 - Notes: The checklist again included N/A items (archives, JWT, client storage credentials, parameterized queries for a UI with no database).
+
+### T-028 | 2026-10-18T08:47Z | phase 6
+- Source: Self (user screenshot of the tool status page: "reduce it to only have the working ones")
+- Why: After the allow-list (T-020) the page still listed 10 red Codacy tools (Agentlinter, Biome, Eslint-9, Jacksonlinter, Jshint, Markdownlint, Oxlint, Pmd, Pmd-7, Remark-lint) with "Last scan 28 minutes ago", alongside the green ones.
+- Input: screenshot (user chat); workflow run status metadata from the public Actions API (`GET .../actions/workflows/codacy.yml/runs`): runs for 36cdbbb (07:22:21Z) and c325100 (07:23:01Z) `completed success` after the allow-list commit de661a6; d752092 in progress.
+- Output: n/a
+- Interpretation: Source: the post-allow-list runs succeeded. Inferred: the red entries are stale configurations from the 07:12 upload (1afcf28, before the allow-list), matching "Last scan 28 minutes ago". The workflow no longer uploads those tools, but code scanning keeps a configuration until someone deletes it. Deleting requires the repository UI or the code scanning API. I have no credentials for the API, and section 10 rules it out, so no code change can remove them.
+- Findings: none
+- Action: none needed in code; I told the user how to delete the 10 stale configurations in the UI (tool → configuration menu → Delete configuration)
+- Changes: none
+- Notes: I did not read any scan results; only run status metadata.
+
+### T-027 | 2026-10-18T08:40Z | phase 6
+- Source: MCP sec-review/general_lightweight_security_review
+- Why: Server workflow step 1 before writing Terraform.
+- Input: evaluation/raw/T-027.input.json (components `container-and-iac,secrets-and-config,transport-security,object-storage,database`; data_handled `credentials,secrets,personal_data`)
+- Output: evaluation/raw/T-027.output.json. Summary: risk `critical`, 22 threats, 22 countermeasures.
+- Interpretation: New relevant requirements: `overbroad-cloud-permissions` / `least-privilege-iam`, and `container-runs-as-root` / `non-root-minimal-images` (for the phase 7 Dockerfiles). The rest restates earlier requirements in an infrastructure context: private data stores, encryption at rest, TLS policy, secrets out of images, least-privilege DB account. Application-level entries (SQL injection, mass assignment, IDOR, password hashing, NoSQL injection) do not apply to Terraform.
+- Findings: F-093, F-094
+- Action: applied in Terraform (and phase 7 for F-094)
+- Changes: infra/ (commit filled in below)
+- Notes: Logged after T-028 in time order; T-028 was the user's screenshot, which came in while the Terraform was being written.
+
+### T-029 | 2026-10-18T09:05Z | phase 6
+- Source: MCP sec-review/general_verify_code_security
+- Why: Server workflow step 3 for the Terraform, with T-027's components.
+- Input: evaluation/raw/T-029.input.json
+- Output: evaluation/raw/T-029.output.json. Summary: review prompt, 17-item checklist, 12 focus areas.
+- Interpretation: Following the prompt, I reviewed `infra/`; the review is in evaluation/raw/T-029.review.md: "Needs Attention". R29-1 (medium): `AmazonSSMManagedInstanceCore` grants `ssm:GetParameter*` on `*`, so the UI role could decrypt the API's database and Redis secrets and the operator-only migration password. Found through the checklist item "Grant only the cloud permissions the app uses". R29-2 and R29-3 are low and accepted.
+- Findings: F-090, F-091, F-092
+- Action: applied (F-090 fixed; F-091/F-092 accepted)
+- Changes: see findings
+- Notes: Checks run before the review: `terraform fmt -check -recursive` and `terraform init -backend=false` + `terraform validate` both pass. While writing the env I also found and removed a module-level `depends_on` that would have created a dependency cycle at plan time (UI SSM parameters → API internal LB → UI security group). It was replaced by a `config_version` input on the launch templates.

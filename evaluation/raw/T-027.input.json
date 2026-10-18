@@ -1,0 +1,9 @@
+{
+  "tool": "mcp__sec-review__general_lightweight_security_review",
+  "arguments": {
+    "task_description": "Write Terraform (>= 1.9, AWS provider 6.x) for Taskboard: reusable modules network (VPC over two AZs, public and private subnets, NAT gateway, route tables), alb (public Application Load Balancer forwarding to UI instances), ui and api (launch templates and EC2 instances in private subnets bootstrapped with user_data that installs Docker, pulls images from ECR and runs the service with configuration and secrets fetched from SSM Parameter Store / Secrets Manager), database (RDS PostgreSQL 16), cache (ElastiCache Redis OSS/Valkey), storage (S3 bucket for attachments), registry (ECR repositories), iam (roles and instance profiles), composed in envs/dev with a partial S3 backend. The API must never be internet-exposed.",
+    "components": "container-and-iac,secrets-and-config,transport-security,object-storage,database",
+    "data_handled": "credentials,secrets,personal_data",
+    "technologies": "Terraform, AWS VPC, ALB, EC2, RDS PostgreSQL, ElastiCache, S3, ECR, IAM, SSM, Docker"
+  }
+}

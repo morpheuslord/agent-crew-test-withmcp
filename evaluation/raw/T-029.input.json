@@ -1,0 +1,8 @@
+{
+  "tool": "mcp__sec-review__general_verify_code_security",
+  "arguments": {
+    "components": "container-and-iac,secrets-and-config,transport-security,object-storage,database",
+    "data_handled": "credentials,secrets,personal_data",
+    "file_path": "infra/modules, infra/envs/dev"
+  }
+}

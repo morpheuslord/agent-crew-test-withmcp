@@ -1,0 +1,59 @@
+{
+  "success": true,
+  "review_type": "ai_powered_security_review",
+  "instructions": "IMPORTANT: You (the AI agent) must now perform the security review. The code is not included here: review the code you just wrote, which is already in your context, using the checklist and focus areas. Report all security issues found with severity ratings and fixes.",
+  "review_prompt": "## SECURITY CODE REVIEW REQUEST\n\n**File:** `infra/modules, infra/envs/dev`\n**Components:** container-and-iac, secrets-and-config, transport-security, object-storage, database\n**Risk Level:** CRITICAL\n\n### Review Instructions\n\nReview the code you just wrote (it is already in your context) for security vulnerabilities. For each issue found:\n1. Identify the vulnerability type and severity (Critical/High/Medium/Low)\n2. Explain why it's a security risk\n3. Show the problematic code snippet\n4. Provide a secure code fix\n\n### Focus Areas\n\nPay special attention to:\n- API keys or passwords are committed to the repo or baked into code\n- Attacker input changes the meaning of a database query\n- Passwords are stored in plain text or with a fast hash, so a database leak exposes them\n- Sensitive data travels over plain HTTP or an unencrypted connection\n- Debug features or consoles are left on in production\n- Default or hardcoded admin accounts are left active\n- .env, .git, or backup files are reachable from the web\n- A database, cache, or admin port is reachable from the internet\n- Encryption or signing keys are hardcoded or shared across environments\n- Long-lived storage keys are shipped to the browser or mobile app\n- A request sets fields the user should not control, such as role or price\n- Query operators in user input bypass filters in a NoSQL database\n\n### Security Checklist\n\nVerify each item and report violations:\n- [ ] Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.\n- [ ] Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.\n- [ ] Hash passwords with a slow, salted algorithm: Use Argon2id, scrypt, or bcrypt through your framework's password helper. Never use MD5 or SHA for passwords.\n- [ ] Use HTTPS for every connection: Serve everything over HTTPS with a trusted certificate, redirect HTTP to HTTPS, and use TLS for service-to-service calls as well.\n- [ ] Turn debug features off in production: Set DEBUG false, remove debug consoles and verbose logging, and fail the deploy if debug is on.\n- [ ] Remove default and hardcoded accounts: Ship no preset admin users. Create the first admin through a one-time setup step with a strong generated password.\n- [ ] Do not deploy repo metadata or env files: Exclude .git, .env, and backups from the build and the web root, and block them at the web server.\n- [ ] Keep data stores off the public internet: Place databases and caches in private subnets, bind them to internal interfaces, and allow only the app through security groups.\n- [ ] Use separate keys per environment and rotate them: Generate different keys for development, staging, and production, load them from the secrets manager, and rotate them on a schedule or after exposure.\n- [ ] Give clients short-lived, narrowly scoped credentials: Issue pre-signed or token-exchanged credentials limited to one object or prefix. Never ship long-lived keys to clients.\n- [ ] Accept only the fields you expect: Bind requests to an explicit schema or DTO with allowed fields. Never copy a request body straight onto a model.\n- [ ] Check permissions on the server for every action: Enforce role and permission checks in a central layer on each endpoint, not only by hiding UI.\n- [ ] Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.\n- [ ] Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.\n- [ ] Grant only the cloud permissions the app uses: Write narrow roles per service, avoid wildcards on actions and resources, and review them when features change.\n- [ ] Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.\n- [ ] Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies.\n\n### Expected Response Format\n\nProvide your security review with:\n1. **Summary:** Overall assessment (Secure/Needs Attention/Insecure)\n2. **Findings:** List of security issues with severity and fixes\n3. **Checklist Results:** Which items pass/fail\n4. **Recommendations:** Prioritized list of actions",
+  "context": {
+    "file_path": "infra/modules, infra/envs/dev",
+    "components": [
+      "container-and-iac",
+      "secrets-and-config",
+      "transport-security",
+      "object-storage",
+      "database"
+    ],
+    "risk_level": "critical"
+  },
+  "security_checklist": [
+    "Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.",
+    "Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.",
+    "Hash passwords with a slow, salted algorithm: Use Argon2id, scrypt, or bcrypt through your framework's password helper. Never use MD5 or SHA for passwords.",
+    "Use HTTPS for every connection: Serve everything over HTTPS with a trusted certificate, redirect HTTP to HTTPS, and use TLS for service-to-service calls as well.",
+    "Turn debug features off in production: Set DEBUG false, remove debug consoles and verbose logging, and fail the deploy if debug is on.",
+    "Remove default and hardcoded accounts: Ship no preset admin users. Create the first admin through a one-time setup step with a strong generated password.",
+    "Do not deploy repo metadata or env files: Exclude .git, .env, and backups from the build and the web root, and block them at the web server.",
+    "Keep data stores off the public internet: Place databases and caches in private subnets, bind them to internal interfaces, and allow only the app through security groups.",
+    "Use separate keys per environment and rotate them: Generate different keys for development, staging, and production, load them from the secrets manager, and rotate them on a schedule or after exposure.",
+    "Give clients short-lived, narrowly scoped credentials: Issue pre-signed or token-exchanged credentials limited to one object or prefix. Never ship long-lived keys to clients.",
+    "Accept only the fields you expect: Bind requests to an explicit schema or DTO with allowed fields. Never copy a request body straight onto a model.",
+    "Check permissions on the server for every action: Enforce role and permission checks in a central layer on each endpoint, not only by hiding UI.",
+    "Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.",
+    "Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.",
+    "Grant only the cloud permissions the app uses: Write narrow roles per service, avoid wildcards on actions and resources, and review them when features change.",
+    "Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.",
+    "Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies."
+  ],
+  "focus_areas": [
+    "API keys or passwords are committed to the repo or baked into code",
+    "Attacker input changes the meaning of a database query",
+    "Passwords are stored in plain text or with a fast hash, so a database leak exposes them",
+    "Sensitive data travels over plain HTTP or an unencrypted connection",
+    "Debug features or consoles are left on in production",
+    "Default or hardcoded admin accounts are left active",
+    ".env, .git, or backup files are reachable from the web",
+    "A database, cache, or admin port is reachable from the internet",
+    "Encryption or signing keys are hardcoded or shared across environments",
+    "Long-lived storage keys are shipped to the browser or mobile app",
+    "A request sets fields the user should not control, such as role or price",
+    "Query operators in user input bypass filters in a NoSQL database"
+  ],
+  "expected_response": {
+    "format": "structured_security_review",
+    "required_sections": [
+      "overall_assessment",
+      "findings_list",
+      "checklist_results",
+      "recommended_fixes"
+    ]
+  }
+}

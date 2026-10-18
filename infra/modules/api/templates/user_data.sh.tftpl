@@ -1,0 +1,35 @@
+#!/bin/bash
+# Bootstraps a Taskboard API instance: Docker, configuration from SSM, one hardened container.
+set -euo pipefail
+umask 077
+
+REGION="${region}"
+dnf install -y docker
+systemctl enable --now docker
+
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "${registry}"
+
+mkdir -p /etc/taskboard
+# CA bundle for verify-full TLS to RDS (DATABASE_URL sets sslmode=verify-full).
+curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+  https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /etc/taskboard/rds-ca.pem
+chmod 644 /etc/taskboard/rds-ca.pem
+
+aws ssm get-parameters-by-path --region "$REGION" --path "${ssm_path}" --with-decryption \
+  --query 'Parameters[*].[Name,Value]' --output text \
+  | while IFS=$'\t' read -r name value; do printf '%s=%s\n' "$${name##*/}" "$value"; done \
+  > /etc/taskboard/service.env
+chmod 600 /etc/taskboard/service.env
+
+# Host networking lets the container use the instance role (for S3) while the IMDS hop limit
+# stays at 1 for anything in a bridge network.
+docker run -d --name taskboard-api --restart unless-stopped \
+  --network host \
+  --env-file /etc/taskboard/service.env \
+  -v /etc/taskboard/rds-ca.pem:/etc/ssl/rds-ca.pem:ro \
+  --read-only --tmpfs /tmp:rw,noexec,nosuid,size=256m \
+  --cap-drop ALL --security-opt no-new-privileges:true \
+  --memory 1g --pids-limit 512 \
+  --log-driver awslogs --log-opt awslogs-region="$REGION" \
+  --log-opt awslogs-group="${log_group}" --log-opt awslogs-create-group=false \
+  "${image}"

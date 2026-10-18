@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars (git-ignored) and fill in real values.
+aws_region         = "eu-west-1"
+availability_zones = ["eu-west-1a", "eu-west-1b"]
+public_hostname    = "taskboard.example.com"
+certificate_arn    = "arn:aws:acm:eu-west-1:111111111111:certificate/00000000-0000-0000-0000-000000000000"
+
+# Images are pushed to the ECR repositories this configuration creates; use immutable tags.
+ui_image_tag  = "replace-with-git-sha"
+api_image_tag = "replace-with-git-sha"
+
+# Optional overrides
+# allowed_ingress_cidrs = ["203.0.113.0/24"]
+# instances_per_service = 2
+# db_multi_az           = true
+# deletion_protection   = true
