@@ -121,7 +121,8 @@ Short ADR-style records. "Driven by" says where the decision came from: the brie
 
 ## ADR-014: API naming adjustments
 
-- **Decision:** All endpoints from brief 4.7 are kept as written. Added `GET /api/v1/admin/cache/stats`. The OpenAPI
+- **Decision:** All endpoints from brief 4.7 are kept as written. Added `GET /api/v1/projects` (the caller's projects
+  for the dashboard; the brief's list only has per-team project lists) and `GET /api/v1/admin/cache/stats`. The OpenAPI
   document is served at `/api/v1/openapi.json`, behind the service token like every other `/api/v1` route (F-071).
   There is no interactive docs UI.
 - **Reason:** Keeps the contract stable and versioned, with no debug surfaces by default.
@@ -165,3 +166,43 @@ Short ADR-style records. "Driven by" says where the decision came from: the brie
   CodeQL, Semgrep and Trivy cover the JavaScript/TypeScript code.
 - **Driven by:** User instructions in chat (2026-10-18) to correct the Codacy configuration and then to reduce it to
   usable tools, overriding the brief's rule that these files are never modified.
+
+## ADR-018: TypeScript 6.0 instead of 7.0
+
+- **Decision:** The UI uses TypeScript 6.0.3.
+- **Reason:** TypeScript 7.0.2 is the latest release, but typescript-eslint 8.71.2 (required for ESLint with
+  typescript-eslint) only supports `typescript >=4.8.4 <6.1.0`.
+- **Driven by:** Brief section 3 (current stable releases; ESLint with typescript-eslint); npm peer dependency data.
+
+## ADR-019: Internal ALB in the api module
+
+- **Decision:** The `api` module creates an internal Application Load Balancer in the private app subnets, reachable
+  only from the UI security group. The UI calls the API through it.
+- **Reason:** The API runs as an Auto Scaling group of several instances, and the UI needs one stable address. The
+  brief's module list has no separate internal load balancer module, so it lives with the service it fronts.
+- **Driven by:** My judgment (brief section 6 module list).
+
+## ADR-020: Least-privilege database role created by a migration command
+
+- **Decision:** `taskboard-admin migrate` runs Alembic as the owner and maintains `taskboard_app` with DML-only grants.
+  The API always connects as `taskboard_app`, locally and in AWS.
+- **Reason:** A flaw in the API (for example SQL injection) cannot drop or alter tables, and cannot read the migration
+  table.
+- **Driven by:** sec-review T-010 and T-027/T-030 (`least-privilege-accounts`, F-062).
+
+## ADR-021: No secrets reach the instances except through SSM at boot
+
+- **Decision:** Terraform generates every runtime secret and stores it as an SSM SecureString under the service's
+  path. user_data contains only parameter paths. Each instance role can decrypt only its own path (KMS encryption
+  context). The RDS master password stays in RDS-managed Secrets Manager, readable by operators only.
+- **Reason:** Keeps secrets out of code, tfvars, images and user_data, and isolates the UI from the API's database and
+  cache credentials.
+- **Driven by:** sec-review T-027 (`secrets-manager`, `least-privilege-iam`) and T-029 review finding F-090.
+
+## ADR-022: Healthchecks declared in Compose as well as in the Dockerfiles
+
+- **Decision:** `docker-compose.yml` declares the API and UI healthchecks itself.
+- **Reason:** OCI-format image builds (Podman's default, which this build environment uses) drop the Dockerfile
+  `HEALTHCHECK`, and Compose's `service_healthy` dependencies then fail. Declaring the healthchecks in Compose works with
+  both Docker and Podman.
+- **Driven by:** Environment constraint found while running `make up`.
