@@ -147,3 +147,15 @@ Short ADR-style records. "Driven by" says where the decision came from: the brie
   (`ed142fd…`, tag v0.36.0) because several of its older release tags were re-published in March 2026. Trivy itself is
   pinned to v0.76.0, and Semgrep runs from the version-tagged `semgrep/semgrep:1.181.0` image with metrics off.
 - **Driven by:** User instruction in chat (2026-10-18), outside the original brief.
+
+## ADR-017: Codacy workflow corrections
+
+- **Decision:** `codacy.yml` keeps the Codacy CLI step unchanged. The post-processing step now gives each run a
+  stable category (`codacy/<tool name>`, with the run index added only when two runs share a tool name). It removes
+  Codacy's `partialFingerprints` so `upload-sarif` computes consistent ones, and splits the runs into files of at
+  most 20 runs. Each file is uploaded with its own category (`codacy-part-0`, `-1`, `-2`), and the step fails loudly
+  above 60 runs. `.codacy.yml` also excludes generated output and lockfiles.
+- **Reason:** Code scanning rejected the upload with "rejecting SARIF, as there are more runs than allowed
+  (24 > 20)". The upload log also warned about inconsistent fingerprints for Codacy results.
+- **Driven by:** User instruction in chat (2026-10-18) to correct the Codacy configuration, overriding the brief's
+  rule that these files are never modified.

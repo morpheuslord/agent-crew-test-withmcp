@@ -178,3 +178,14 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied
 - Changes: api/ (baseline 20eda4e)
 - Notes: none
+
+### T-018 | 2026-10-18T07:35Z | phase 4
+- Source: Self (user relayed the Codacy workflow log and asked for the Codacy configuration to be corrected)
+- Why: Upload step log: many `Calculated fingerprint ... but found existing inconsistent fingerprint value` warnings (docs/DECISIONS.md, .github/workflows/codacy.yml, api/src/taskboard/__init__.py), then `Error: Code Scanning could not process the submitted SARIF file: rejecting SARIF, as there are more runs than allowed (24 > 20)`. The user wrote: "the entire codacy config needs corrections".
+- Input: the pasted log and instruction (user chat)
+- Output: Corrected `.github/workflows/codacy.yml` and `.codacy.yml`.
+- Interpretation: Source: GitHub limits one SARIF upload to 20 runs, and the brief's jq step makes one run per Codacy tool (24 here). Inferred: the fingerprint warnings come from Codacy writing its own `partialFingerprints` that differ from the ones `upload-sarif` calculates. They do not block the upload, but they make alert matching across commits unreliable. Fix: per-run stable categories, Codacy fingerprints removed, runs split into ≤20-run files uploaded in separate steps. Tested the jq/bash step locally in an `alpine:3.22` container (jq is not installed on the host) against a synthetic 24-run SARIF with a duplicated tool name and a run without `results`. Result: 2 files (20 + 4 runs), 24 unique categories, no `partialFingerprints`, results preserved, and runs without `results` left unchanged. The first draft wrongly turned a missing `results` into `null`, and I fixed that before committing. `.codacy.yml` now also excludes generated directories and lockfiles (recorded in suppressions.md).
+- Findings: none
+- Action: applied
+- Changes: .github/workflows/codacy.yml, .codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md, evaluation/session-meta.md (commit filled in below)
+- Notes: This deviates from the brief's section 10 at the user's explicit instruction. I did not read any scanner results; the log came from the user.

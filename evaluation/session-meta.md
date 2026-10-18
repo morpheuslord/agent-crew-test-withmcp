@@ -93,6 +93,10 @@ Call `general_verify_code_security` with the same `components`. Do not paste cod
   Terraform-specific scan, SARIF uploaded to GitHub code scanning). They were added as
   `.github/workflows/semgrep.yml` and `.github/workflows/trivy.yml` (DECISIONS ADR-016, tool-log T-006). Arm B may not
   have them, which matters when comparing scanner results between the two builds.
+- 2026-10-18T07:35Z: the user relayed the Codacy upload failure ("rejecting SARIF, as there are more runs than allowed
+  (24 > 20)") and said "the entire codacy config needs corrections". This overrides section 10's rule that
+  `.github/workflows/codacy.yml` and `.codacy.yml` are never modified. Both files were changed (DECISIONS ADR-017,
+  tool-log T-018). `.github/workflows/codeql.yml` is still exactly as given in the brief.
 
 ## Checks skipped
 

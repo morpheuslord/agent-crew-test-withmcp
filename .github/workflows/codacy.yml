@@ -32,13 +32,60 @@ jobs:
           gh-code-scanning-compat: true
           max-allowed-issues: 2147483647
 
-      - name: Give each SARIF run its own category
+      # Code scanning accepts at most 20 runs per SARIF upload, and Codacy emits one run per tool
+      # (24 at the time of writing). Give each run a stable category of its own, drop Codacy's
+      # partial fingerprints so upload-sarif computes consistent ones, and split the runs into
+      # files of at most 20 runs each.
+      - name: Prepare SARIF for code scanning
         run: |
-          jq '.runs |= (to_entries | map(.value + {automationDetails: {id: ("codacy/" + (.value.tool.driver.name // "codacy") + "/" + (.key | tostring))}}))' results.sarif > results.fixed.sarif
-          mv results.fixed.sarif results.sarif
+          jq '
+            .runs |= (
+              to_entries
+              | (map(.value.tool.driver.name // "codacy")) as $names
+              | map(
+                  (.value.tool.driver.name // "codacy") as $name
+                  | .key as $index
+                  | .value
+                  + {automationDetails: {id: (
+                      "codacy/" + $name
+                      + (if ([$names[] | select(. == $name)] | length) > 1
+                         then "/" + ($index | tostring) else "" end)
+                    )}}
+                  | if (.results | type) == "array"
+                    then .results |= map(del(.partialFingerprints))
+                    else . end
+                )
+            )
+          ' results.sarif > results.prepared.sarif
+          total=$(jq '.runs | length' results.prepared.sarif)
+          if [ "$total" -gt 60 ]; then
+            echo "::error::Codacy produced $total SARIF runs; add another upload step."
+            exit 1
+          fi
+          mkdir -p codacy-sarif
+          for start in $(seq 0 20 $((total - 1))); do
+            jq --argjson start "$start" '.runs |= .[$start:$start + 20]' results.prepared.sarif \
+              > "codacy-sarif/part-$((start / 20)).sarif"
+          done
+          echo "Split $total runs into $(find codacy-sarif -name '*.sarif' | wc -l) file(s)."
 
-      - name: Upload SARIF to code scanning
+      - name: Upload SARIF to code scanning (runs 1-20)
+        if: hashFiles('codacy-sarif/part-0.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: results.sarif
-          category: codacy
+          sarif_file: codacy-sarif/part-0.sarif
+          category: codacy-part-0
+
+      - name: Upload SARIF to code scanning (runs 21-40)
+        if: hashFiles('codacy-sarif/part-1.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: codacy-sarif/part-1.sarif
+          category: codacy-part-1
+
+      - name: Upload SARIF to code scanning (runs 41-60)
+        if: hashFiles('codacy-sarif/part-2.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: codacy-sarif/part-2.sarif
+          category: codacy-part-2

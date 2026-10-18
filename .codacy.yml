@@ -1,3 +1,12 @@
 ---
 exclude_paths:
   - "evaluation/**"
+  # Generated or vendored files: analysing them only produces noise.
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/coverage/**"
+  - "**/.terraform/**"
+  # Lockfiles are machine-written; dependency CVEs in them are covered by the Trivy workflow.
+  - "**/package-lock.json"
+  - "**/uv.lock"
+  - "**/.terraform.lock.hcl"
