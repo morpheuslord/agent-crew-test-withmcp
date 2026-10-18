@@ -22,7 +22,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Source lists threats and countermeasures, not code findings. Each applicable threat was recorded as a requirement (MCP-direct). Inferred not applicable: `jwt-tampering` and `validate-token-claims` for audience/issuer (design uses opaque server-side session tokens, no JWTs); `agent-reads-secrets` concerns the coding agent's own permissions, not the product. `offer-mfa` and `breached-password-check` are not built (accepted risk, recorded in DECISIONS). The tool recommends a 15+ minimum password length "is better"; I chose 12 (see F-027).
 - Findings: F-001 to F-037
 - Action: applied (design decisions in docs/ARCHITECTURE.md and docs/DECISIONS.md); implementation follows in phases 3 and 5
-- Changes: docs/ARCHITECTURE.md, docs/DECISIONS.md (commit filled below)
+- Changes: docs/ARCHITECTURE.md, docs/DECISIONS.md (a2f6b7a)
 - Notes: Response is large (one ~23 KB JSON line).
 
 ### T-003 | 2026-10-18T06:17Z (approx.) | phase 2
@@ -33,7 +33,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: The tool does not analyse anything itself; it returns a checklist and template for me to fill. Following it, I produced a 17-threat model (evaluation/raw/T-003.produced.json). Library threats new versus T-002 were recorded as MCP-direct (ssrf, stored-xss, upload threats, tls-verification-disabled, no-timeouts-or-size-caps, archive-path-traversal). Threats I derived by applying the template to this design (sort-field SQL injection, CSV formula injection, stale cached permissions, tokens in the dev mail log, forged identity on the internal network, Content-Disposition header injection) were recorded as MCP-prompted. Dropped: `archive-path-traversal` (app never extracts archives). The `upload-allow-list` countermeasure conflicts with the brief ("any type"), so it is not applied.
 - Findings: F-038 to F-053
 - Action: applied (threat model drives the design; see docs/threat-model.md and DECISIONS)
-- Changes: docs/threat-model.md (via T-004)
+- Changes: docs/threat-model.md via T-004 (a2f6b7a)
 - Notes: The tool's own text says to ask the user before saving the file. The brief tells me to work autonomously and to use this server as part of the normal toolchain, so I saved it without asking (T-004).
 
 ### T-004 | 2026-10-18T06:20:22Z | phase 2
@@ -44,7 +44,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: File written as rendered Markdown (260 lines), checked by reading it. The stats count neither `in_progress` (15 threats) nor `accepted` (2 threats) statuses, which is why both counters are 0; that is a property of the tool's summary, not of the content.
 - Findings: none
 - Action: applied
-- Changes: docs/threat-model.md
+- Changes: docs/threat-model.md (a2f6b7a)
 - Notes: none
 
 ### T-005 | 2026-10-18T06:21Z | phase 2
@@ -66,5 +66,5 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Supply-chain hygiene for the new workflows: looked up current releases via the GitHub API and Docker Hub. trivy-action v0.33.1, v0.34.0 and v0.35.0 all show `published_at` 2026-03-20, consistent with tags having been re-published, so the action is pinned to the v0.36.0 commit `ed142fd0673e97e23eac54620cfb913e5ce36c25` instead of a tag. Checked that all 10 Semgrep registry rule sets resolve (HTTP 200).
 - Findings: none
 - Action: applied. The first draft used an inline `# shellcheck disable=SC2086` comment; I replaced it with Semgrep's `SEMGREP_RULES` environment variable so no suppression was added.
-- Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml, docs/DECISIONS.md (ADR-016)
+- Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml, docs/DECISIONS.md ADR-016 (833373a)
 - Notes: Section 10 still applies: I do not read scanner results, and the three original scanner files are unchanged. The `infra/` jobs have nothing to scan until phase 6 lands.
