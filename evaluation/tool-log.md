@@ -363,5 +363,5 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Written as requested, and the file was checked after writing. The tool reports `action: created` although it replaced an existing file. `open: 0` counts only status `open`, and the two `accepted` threats appear in neither counter.
 - Findings: none
 - Action: applied
-- Changes: docs/threat-model.md (commit filled in below)
+- Changes: docs/threat-model.md (6fb7315)
 - Notes: Before sending, I corrected TM-17's stale text (`sslmode=require` → `verify-full`, as implemented).
