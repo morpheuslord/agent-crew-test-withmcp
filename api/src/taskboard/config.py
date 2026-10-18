@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     enable_docs: bool = False
 
     login_max_failures: int = Field(default=5, ge=1)
+    login_max_account_failures: int = Field(default=50, ge=1)
     login_max_attempts_per_ip: int = Field(default=20, ge=1)
     forgot_max_per_ip: int = Field(default=5, ge=1)
     register_max_per_ip: int = Field(default=10, ge=1)

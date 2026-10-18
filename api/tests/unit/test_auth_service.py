@@ -70,13 +70,24 @@ def test_login_failures_look_the_same(world: World) -> None:
     assert world.hasher.burned == 1
 
 
-def test_login_locks_after_repeated_failures(world: World) -> None:
+def test_login_locks_the_failing_client_only(world: World) -> None:
     _register(world)
     for _ in range(3):
         with pytest.raises(InvalidCredentialsError):
             world.auth.login("ada@example.test", "wrong-password-123", "10.0.0.1")
     with pytest.raises(RateLimitedError):
         world.auth.login("ada@example.test", PASSWORD, "10.0.0.1")
+    # F-070: an attacker's failures do not lock the owner out from their own client.
+    assert world.auth.login("ada@example.test", PASSWORD, "10.0.0.50").user.email
+
+
+def test_login_has_a_per_account_ceiling(world: World) -> None:
+    _register(world)
+    for i in range(6):
+        with pytest.raises(InvalidCredentialsError):
+            world.auth.login("ada@example.test", "wrong-password-123", f"10.0.1.{i}")
+    with pytest.raises(RateLimitedError):
+        world.auth.login("ada@example.test", PASSWORD, "10.0.2.1")
 
 
 def test_login_is_limited_per_ip(world: World) -> None:

@@ -42,6 +42,7 @@ POLICY = AuthPolicy(
     reset_token_ttl_seconds=1800,
     public_base_url="https://taskboard.example.test",
     login_max_failures=3,
+    login_max_account_failures=6,
     login_max_attempts_per_ip=10,
     forgot_max_per_ip=3,
     register_max_per_ip=5,

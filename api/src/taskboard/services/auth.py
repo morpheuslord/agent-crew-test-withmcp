@@ -39,6 +39,7 @@ class AuthPolicy:
     reset_token_ttl_seconds: int
     public_base_url: str
     login_max_failures: int
+    login_max_account_failures: int
     login_max_attempts_per_ip: int
     forgot_max_per_ip: int
     register_max_per_ip: int
@@ -95,8 +96,14 @@ class AuthService:
     def login(self, email: str, password: str, client_ip: str) -> IssuedSession:
         email = normalize_email(email)
         self._throttle("login-ip", client_ip, self._policy.login_max_attempts_per_ip)
-        failure_key = limiter_key("login-fail", email)
-        if self._limiter.count(failure_key) >= self._policy.login_max_failures:
+        # Lock per (email, client) so a third party cannot lock the owner out, and keep a much
+        # higher per-account ceiling that still slows guessing spread across many clients.
+        failure_key = limiter_key("login-fail", f"{email}|{client_ip}")
+        account_key = limiter_key("login-fail-account", email)
+        if (
+            self._limiter.count(failure_key) >= self._policy.login_max_failures
+            or self._limiter.count(account_key) >= self._policy.login_max_account_failures
+        ):
             logger.warning("login blocked after repeated failures")
             raise RateLimitedError()
         credentials = self._users.get_credentials(email)
@@ -109,6 +116,7 @@ class AuthService:
         )
         if credentials is None or not valid:
             self._limiter.hit(failure_key, self._policy.rate_limit_window_seconds)
+            self._limiter.hit(account_key, self._policy.rate_limit_window_seconds)
             logger.info("login failed", extra={"client_ip": client_ip})
             raise InvalidCredentialsError()
         self._limiter.reset(failure_key)

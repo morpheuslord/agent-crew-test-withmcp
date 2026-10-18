@@ -174,6 +174,7 @@ class RequestServices:
                 reset_token_ttl_seconds=s.reset_token_ttl_seconds,
                 public_base_url=str(s.public_base_url),
                 login_max_failures=s.login_max_failures,
+                login_max_account_failures=s.login_max_account_failures,
                 login_max_attempts_per_ip=s.login_max_attempts_per_ip,
                 forgot_max_per_ip=s.forgot_max_per_ip,
                 register_max_per_ip=s.register_max_per_ip,
