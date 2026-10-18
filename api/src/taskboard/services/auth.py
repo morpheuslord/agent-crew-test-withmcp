@@ -143,9 +143,15 @@ class AuthService:
 
     def change_password(self, actor: User, current: str, new: str) -> IssuedSession:
         """Change the password, end every session, and return a fresh one for the caller."""
+        # A stolen session must not become a way to guess the account password.
+        failure_key = limiter_key("password-change-fail", str(actor.id))
+        if self._limiter.count(failure_key) >= self._policy.login_max_failures:
+            raise RateLimitedError()
         stored = self._users.get_password_hash(actor.id)
         if stored is None or not self._hasher.verify(stored, current):
+            self._limiter.hit(failure_key, self._policy.rate_limit_window_seconds)
             raise ValidationFailedError("Current password is incorrect.")
+        self._limiter.reset(failure_key)
         check_password_policy(new)
         self._users.set_password_hash(actor.id, self._hasher.hash(new))
         self._sessions.delete_for_user(actor.id)

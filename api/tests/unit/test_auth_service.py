@@ -133,6 +133,16 @@ def test_change_password_revokes_other_sessions(world: World) -> None:
     world.auth.login("ada@example.test", "new-password-456", "10.0.0.1")
 
 
+def test_change_password_guessing_is_throttled(world: World) -> None:
+    _register(world)
+    session = world.auth.login("ada@example.test", PASSWORD, "10.0.0.1")
+    for _ in range(3):
+        with pytest.raises(ValidationFailedError):
+            world.auth.change_password(session.user, "guess-guess-guess", "new-password-456")
+    with pytest.raises(RateLimitedError):
+        world.auth.change_password(session.user, PASSWORD, "new-password-456")
+
+
 def _reset_token(world: World) -> str:
     _, _, body = world.mailer.sent[-1]
     link = next(line for line in body.splitlines() if line.startswith("https://"))
