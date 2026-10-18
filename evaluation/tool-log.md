@@ -308,7 +308,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: New relevant requirements: `overbroad-cloud-permissions` / `least-privilege-iam`, and `container-runs-as-root` / `non-root-minimal-images` (for the phase 7 Dockerfiles). The rest restates earlier requirements in an infrastructure context: private data stores, encryption at rest, TLS policy, secrets out of images, least-privilege DB account. Application-level entries (SQL injection, mass assignment, IDOR, password hashing, NoSQL injection) do not apply to Terraform.
 - Findings: F-093, F-094
 - Action: applied in Terraform (and phase 7 for F-094)
-- Changes: infra/ (commit filled in below)
+- Changes: infra/ (c85a32c)
 - Notes: Logged after T-028 in time order; T-028 was the user's screenshot, which came in while the Terraform was being written.
 
 ### T-029 | 2026-10-18T09:05Z | phase 6
