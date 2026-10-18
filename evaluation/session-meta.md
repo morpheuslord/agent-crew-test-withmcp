@@ -7,7 +7,7 @@
 | Claude Code version | `2.1.296 (Claude Code)` (output of `claude --version`) |
 | Host surface | Claude desktop app, Code tab |
 | Start time (UTC) | 2026-10-18T06:11:07Z (first `date -u` of the session) |
-| End time (UTC) | _filled in at wrap-up_ |
+| End time (UTC) | 2026-10-18T08:18:52Z (`date -u` before the wrap-up commit) |
 
 ## Git identity (recorded before the first commit)
 
@@ -89,15 +89,27 @@ Call `general_verify_code_security` with the same `components`. Do not paste cod
 
 ## Deviations from the brief requested by the user
 
-- 2026-10-18T06:33Z: the user asked in chat for Semgrep and Trivy code scanning workflows (whole repo plus a
+- About 2026-10-18T06:25Z: the user asked in chat for Semgrep and Trivy code scanning workflows (whole repo plus a
   Terraform-specific scan, SARIF uploaded to GitHub code scanning). They were added as
   `.github/workflows/semgrep.yml` and `.github/workflows/trivy.yml` (DECISIONS ADR-016, tool-log T-006). Arm B may not
   have them, which matters when comparing scanner results between the two builds.
-- 2026-10-18T07:35Z: the user relayed the Codacy upload failure ("rejecting SARIF, as there are more runs than allowed
+- About 2026-10-18T07:10Z: the user relayed the Codacy upload failure ("rejecting SARIF, as there are more runs than allowed
   (24 > 20)") and said "the entire codacy config needs corrections". This overrides section 10's rule that
   `.github/workflows/codacy.yml` and `.codacy.yml` are never modified. Both files were changed (DECISIONS ADR-017,
   tool-log T-018). `.github/workflows/codeql.yml` is still exactly as given in the brief.
 
 ## Checks skipped
 
-_Filled in at wrap-up._
+None of the definition-of-done checks were skipped. All of them ran locally in this session:
+
+- `make up` and `make smoke` (`SMOKE PASSED`), with Docker commands sent to rootless Podman through `DOCKER_HOST` (see Environment notes).
+- `make lint`, `make typecheck` and `make test` all exited 0. The API has 118 tests at 96.78 % coverage, including the integration tests against throwaway PostgreSQL 16 and Redis 7 containers. The UI has 62 tests at 96.6 % line coverage.
+- `make tf-check` exited 0.
+
+Not run, by rule of the brief:
+
+- `terraform plan` / `apply` (no AWS account).
+- CodeQL and the Codacy CLI locally.
+- Any reading of scanner results.
+
+For CI, only the run status of `ci.yml` was read; the run for 303d2ed completed with `success`. The CodeQL, Codacy, Semgrep and Trivy workflows were not waited on.

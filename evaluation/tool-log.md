@@ -1,9 +1,12 @@
 # Tool log
 
 Chronological record of every MCP tool call and every security-related operation in this session.
-Times are UTC from `date -u` at the time of the entry.
+Times are UTC. Corrected at wrap-up: while working, I estimated most entry times instead of running `date -u`, and from
+T-006 on the estimates ran up to 100 minutes late. Each header now shows the modification time of the entry's raw output
+file (written right after the call). Entries with no raw file use the time of their commit or the window between
+neighbouring entries. T-004 is the only time taken from `date -u` at the moment of the call.
 
-### T-001 | 2026-10-18T06:13Z (approx.; no `date -u` taken immediately before the call) | phase 2
+### T-001 | 2026-10-18T06:15:51Z | phase 2
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Server workflow step 1 ("Before you start coding"): first call with only the task description to get the component menu. Run at the start of the design phase, before any application code.
 - Input: evaluation/raw/T-001.input.json
@@ -14,7 +17,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-002 | 2026-10-18T06:15Z (approx.) | phase 2
+### T-002 | 2026-10-18T06:16:56Z | phase 2
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Second call of workflow step 1 for the system's identity core.
 - Input: evaluation/raw/T-002.input.json (components `authentication,session-management,authorization,secrets-and-config,transport-security`; data_handled `credentials,personal_data`)
@@ -25,7 +28,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: docs/ARCHITECTURE.md, docs/DECISIONS.md (a2f6b7a)
 - Notes: Response is large (one ~23 KB JSON line).
 
-### T-003 | 2026-10-18T06:17Z (approx.) | phase 2
+### T-003 | 2026-10-18T06:18:27Z | phase 2
 - Source: MCP sec-review/threatmodel_perform_threat_model
 - Why: Server workflow step 1 says to also run a threat model for significant features (auth, file handling, external integrations). Run once for the whole system at design time.
 - Input: evaluation/raw/T-003.input.json (components `authentication,authorization,file-upload,outbound-http-request,user-generated-content`)
@@ -47,7 +50,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: docs/threat-model.md (a2f6b7a)
 - Notes: none
 
-### T-005 | 2026-10-18T06:21Z | phase 2
+### T-005 | 2026-10-18, between 06:21Z and 06:27Z | phase 2
 - Source: Self (user relayed a CodeQL workflow error message in chat)
 - Why: The user pasted the CodeQL Python job failure from the phase 1 push: "CodeQL detected code written in GitHub Actions and JavaScript/TypeScript, but not any written in Python."
 - Input: the pasted error message (user chat)
@@ -58,7 +61,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-006 | 2026-10-18T06:33Z | phase 2
+### T-006 | 2026-10-18T06:27Z (commit 833373a) | phase 2
 - Source: Self (user instruction in chat)
 - Why: The user asked mid-session for Semgrep and Trivy workflows that scan all the code, scan the Terraform in particular, and record everything in GitHub's security findings (code scanning).
 - Input: user message: "few scanner enhancements add a semgrep workflow along with a trivy workflow and this time its to scan all the code and also perticularly scan the teraform as well and everything should be recorded in the securities fingings page in github"
@@ -69,7 +72,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml, docs/DECISIONS.md ADR-016 (833373a)
 - Notes: Section 10 still applies: I do not read scanner results, and the three original scanner files are unchanged. The `infra/` jobs have nothing to scan until phase 6 lands.
 
-### T-007 | 2026-10-18T06:37Z | phase 3
+### T-007 | 2026-10-18T06:29Z | phase 3
 - Source: MCP sec-review/sca_verify_packages
 - Why: Server workflow step 2 (adding dependencies): confirm the 20 direct Python packages and pinned versions for the API exist before writing code that uses them. Versions are the latest on PyPI, looked up with the PyPI JSON API.
 - Input: evaluation/raw/T-007.input.json (the arguments were sent as a JSON array string; saved here as parsed JSON)
@@ -80,7 +83,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: api/pyproject.toml, api/uv.lock (20eda4e)
 - Notes: Called in parallel with T-008, as the workflow allows.
 
-### T-008 | 2026-10-18T06:37Z | phase 3
+### T-008 | 2026-10-18T06:29Z | phase 3
 - Source: MCP sec-review/sca_scan_dependencies
 - Why: Server workflow step 2: CVE scan of the new direct Python dependencies.
 - Input: evaluation/raw/T-008.input.json
@@ -91,7 +94,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-009 | 2026-10-18T06:39Z | phase 3
+### T-009 | 2026-10-18T06:29Z | phase 3
 - Source: MCP sec-review/sca_scan_dependencies
 - Why: Cover the 48 transitive packages that `uv lock` resolved (69 total, minus the project itself and the 20 direct ones).
 - Input: evaluation/raw/T-009.input.json (versions taken from `uv export --all-groups`)
@@ -102,7 +105,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-010 | 2026-10-18T06:40Z | phase 3
+### T-010 | 2026-10-18T06:30:10Z | phase 3
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Server workflow step 1 before writing the API core (models, repositories, services, routers, logging, mail outbox, admin command).
 - Input: evaluation/raw/T-010.input.json (components `web-endpoint,database,logging-and-errors,email-sending,cryptography`; data_handled `credentials,personal_data`)
@@ -113,7 +116,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: api/ (20eda4e)
 - Notes: Called in parallel with T-011.
 
-### T-011 | 2026-10-18T06:40Z | phase 3
+### T-011 | 2026-10-18T06:31:11Z | phase 3
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Server workflow step 1 before writing attachments (upload, storage, download) and the webhook notifier.
 - Input: evaluation/raw/T-011.input.json (components `file-upload,object-storage,outbound-http-request,background-job`)
@@ -124,7 +127,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: api/ (20eda4e)
 - Notes: none
 
-### T-012 | 2026-10-18T06:45Z | phase 3
+### T-012 | 2026-10-18T06:30Z (commit 1e90c2b) | phase 3
 - Source: Self (user relayed a Semgrep workflow failure in chat)
 - Why: The user pasted the Semgrep `terraform` job log: `semgrep scan --metrics off --sarif --output semgrep.sarif "$SEMGREP_PATH"` with `SEMGREP_PATH: infra`, `Error: Process completed with exit code 2.`
 - Input: the pasted log excerpt (user chat)
@@ -135,7 +138,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml (1e90c2b)
 - Notes: The fix is based on the job logs the user shared. The user then pasted the Trivy `terraform` job log from the same pre-fix run, which confirms the cause: `lstat infra: no such file or directory`, then `Error: Path does not exist: trivy.sarif` in the upload step. Both are covered by this fix. I did not read any scan results.
 
-### T-013 | 2026-10-18T06:55Z | phase 3
+### T-013 | 2026-10-18, between 06:31Z and 06:57Z | phase 3
 - Source: Self (user shared a screenshot of the GitHub code scanning "Tools" page)
 - Why: The screenshot shows CodeQL, Semgrep OSS and Trivy with green status, and every "(reported by Codacy)" tool (Agentlinter, Biome, Checkov, Eslint-9, Jacksonlinter, Jshint, Lizard, Markdownlint, Opengrep, Oxlint, Pmd, Pmd-7, Remark-lint, Spectral) with red status. The Agentlinter detail reads "No summary of scanned files reported by Agentlinter (reported by Codacy)", setup type "Codacy, Actions workflow".
 - Input: screenshot (user chat)
@@ -146,7 +149,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: The screenshot shows tool status only, not findings.
 
-### T-014 | 2026-10-18T07:05Z | phase 3
+### T-014 | 2026-10-18T06:57:28Z | phase 3
 - Source: MCP sec-review/general_verify_code_security
 - Why: Server workflow step 3 ("After generating code") for the API core, with the same components as T-010.
 - Input: evaluation/raw/T-014.input.json
@@ -157,7 +160,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: F-070 ff86f21; F-071 f0784c3 + cd644cf; F-074 5f3c954; F-075 66a03ee; F-078 7c5540e
 - Notes: Called in parallel with T-015. Process slip: commit f0784c3 was made while its new integration test was failing. My commit chain piped pytest through `tail`, which hid the non-zero exit code. The failure was a wrong test expectation (the removed docs route returns 404, not 401); cd644cf fixed the test. Later commit chains check pytest's exit status directly.
 
-### T-015 | 2026-10-18T07:05Z | phase 3
+### T-015 | 2026-10-18T06:57:51Z | phase 3
 - Source: MCP sec-review/general_verify_code_security
 - Why: Server workflow step 3 for attachments, storage and webhooks, with the same components as T-011.
 - Input: evaluation/raw/T-015.input.json
@@ -168,7 +171,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: F-072/F-073 1166fa7; F-077 02101da
 - Notes: none
 
-### T-016 | 2026-10-18T07:06Z | phase 3
+### T-016 | 2026-10-18T06:58Z to 06:59Z (before commit 20eda4e) | phase 3
 - Source: Self
 - Why: Security decisions made while writing the API, before the post-coding review, that are not covered by an MCP entry.
 - Input: n/a
@@ -179,7 +182,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: api/ (baseline 20eda4e)
 - Notes: none
 
-### T-017 | 2026-10-18T07:30Z | phase 4
+### T-017 | 2026-10-18T07:09:12Z | phase 4
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Server workflow step 1 before writing the cache layer.
 - Input: evaluation/raw/T-017.input.json (components `database,authorization,serialization-and-parsing,logging-and-errors`)
@@ -190,7 +193,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: api/ cache layer (01111f5)
 - Notes: Logged after T-018 in time order. The call was made before the user's Codacy message arrived, and the T-018 work was done in between.
 
-### T-018 | 2026-10-18T07:35Z | phase 4
+### T-018 | 2026-10-18T07:12Z (commit 8e90f68) | phase 4
 - Source: Self (user relayed the Codacy workflow log and asked for the Codacy configuration to be corrected)
 - Why: Upload step log: many `Calculated fingerprint ... but found existing inconsistent fingerprint value` warnings (docs/DECISIONS.md, .github/workflows/codacy.yml, api/src/taskboard/__init__.py), then `Error: Code Scanning could not process the submitted SARIF file: rejecting SARIF, as there are more runs than allowed (24 > 20)`. The user wrote: "the entire codacy config needs corrections".
 - Input: the pasted log and instruction (user chat)
@@ -201,7 +204,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: .github/workflows/codacy.yml, .codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md, evaluation/session-meta.md (8e90f68)
 - Notes: This deviates from the brief's section 10 at the user's explicit instruction. I did not read any scanner results; the log came from the user.
 
-### T-019 | 2026-10-18T07:55Z | phase 4
+### T-019 | 2026-10-18T07:17:50Z | phase 4
 - Source: MCP sec-review/general_verify_code_security
 - Why: Server workflow step 3 for the cache layer, with T-017's components.
 - Input: evaluation/raw/T-019.input.json
@@ -212,7 +215,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: baseline 01111f5; F-080 fix 939a161
 - Notes: The checklist again lists the payment, archive and XML items that do not apply.
 
-### T-020 | 2026-10-18T08:05Z | phase 4
+### T-020 | 2026-10-18T07:22Z (commit de661a6) | phase 4
 - Source: Self (user screenshots of the code scanning tool status page, plus "codacy issue is still not fixed" and then "or else reduce it to have only usable stuff")
 - Why: The first screenshot still showed every Codacy tool red with "Last scan 1 hour ago". The second (after the run for 1afcf28 finished) showed "Last scan now", with Bandit, Checkov, Lizard, Opengrep, Prospector, Pylint, Pylintpython3, Ruff and Spectral green. Agentlinter, Biome, Eslint-9, Jacksonlinter, Jshint, Markdownlint, Oxlint, Pmd, Pmd-7 and Remark-lint were still red.
 - Input: screenshots and messages (user chat). I also read workflow run status metadata (not results) from the public Actions API: `GET /repos/morpheuslord/agent-crew-test-withmcp/actions/workflows/codacy.yml/runs`, which showed the run for 1afcf28 `completed success` at 2026-10-18T07:12:26Z, after failures for 97c3111, 1e90c2b and c606b6b.
@@ -223,7 +226,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: .github/workflows/codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md (de661a6)
 - Notes: The tool entries for the dropped tools will stay in the tool status page as stale configurations until someone deletes them there. I cannot do that without the code scanning API, which the brief rules out, so I told the user.
 
-### T-021 | 2026-10-18T08:15Z | phase 5
+### T-021 | 2026-10-18T07:24:55Z | phase 5
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Server workflow step 1 before writing the UI server.
 - Input: evaluation/raw/T-021.input.json (components `browser-frontend,user-generated-content,session-management,web-endpoint,file-upload`; data_handled `credentials,personal_data`)
@@ -234,7 +237,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: ui/ (72f10c3)
 - Notes: none
 
-### T-022 | 2026-10-18T08:18Z | phase 5
+### T-022 | 2026-10-18T07:27Z | phase 5
 - Source: MCP sec-review/sca_verify_packages
 - Why: Server workflow step 2 before writing UI code: verify the 24 direct npm packages. Versions are current from `npm view`, except TypeScript: 7.0.2 is latest, but typescript-eslint 8.71.2 requires `typescript >=4.8.4 <6.1.0`, so 6.0.3 is used.
 - Input: evaluation/raw/T-022.input.json
@@ -245,7 +248,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: ui/package.json, ui/package-lock.json (72f10c3)
 - Notes: Called in parallel with T-023.
 
-### T-023 | 2026-10-18T08:18Z | phase 5
+### T-023 | 2026-10-18T07:27Z | phase 5
 - Source: MCP sec-review/sca_scan_dependencies
 - Why: Server workflow step 2: CVE scan of the 24 direct npm packages.
 - Input: evaluation/raw/T-023.input.json
@@ -256,7 +259,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-024 | 2026-10-18T08:20Z | phase 5
+### T-024 | 2026-10-18T07:27Z | phase 5
 - Source: MCP sec-review/sca_scan_dependencies
 - Why: Cover the transitive npm packages from `npm install` (278 unique name@version pairs, 254 of them transitive), first half.
 - Input: evaluation/raw/T-024.input.json (127 packages)
@@ -267,7 +270,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-025 | 2026-10-18T08:21Z | phase 5
+### T-025 | 2026-10-18T07:27Z | phase 5
 - Source: MCP sec-review/sca_scan_dependencies
 - Why: Second half of the transitive npm packages.
 - Input: evaluation/raw/T-025.input.json (127 packages)
@@ -278,7 +281,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-026 | 2026-10-18T08:55Z | phase 5
+### T-026 | 2026-10-18T07:42:08Z | phase 5
 - Source: MCP sec-review/general_verify_code_security
 - Why: Server workflow step 3 for the UI, with T-021's components.
 - Input: evaluation/raw/T-026.input.json
@@ -289,7 +292,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: see findings
 - Notes: The checklist again included N/A items (archives, JWT, client storage credentials, parameterized queries for a UI with no database).
 
-### T-028 | 2026-10-18T08:47Z | phase 6
+### T-028 | 2026-10-18, between 07:45Z and 07:54Z | phase 6
 - Source: Self (user screenshot of the tool status page: "reduce it to only have the working ones")
 - Why: After the allow-list (T-020) the page still listed 10 red Codacy tools (Agentlinter, Biome, Eslint-9, Jacksonlinter, Jshint, Markdownlint, Oxlint, Pmd, Pmd-7, Remark-lint) with "Last scan 28 minutes ago", alongside the green ones.
 - Input: screenshot (user chat); workflow run status metadata from the public Actions API (`GET .../actions/workflows/codacy.yml/runs`): runs for 36cdbbb (07:22:21Z) and c325100 (07:23:01Z) `completed success` after the allow-list commit de661a6; d752092 in progress.
@@ -300,7 +303,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: I did not read any scan results; only run status metadata.
 
-### T-027 | 2026-10-18T08:40Z | phase 6
+### T-027 | 2026-10-18T07:45:21Z | phase 6
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Server workflow step 1 before writing Terraform.
 - Input: evaluation/raw/T-027.input.json (components `container-and-iac,secrets-and-config,transport-security,object-storage,database`; data_handled `credentials,secrets,personal_data`)
@@ -311,7 +314,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: infra/ (c85a32c)
 - Notes: Logged after T-028 in time order; T-028 was the user's screenshot, which came in while the Terraform was being written.
 
-### T-029 | 2026-10-18T09:05Z | phase 6
+### T-029 | 2026-10-18T07:54:21Z | phase 6
 - Source: MCP sec-review/general_verify_code_security
 - Why: Server workflow step 3 for the Terraform, with T-027's components.
 - Input: evaluation/raw/T-029.input.json
@@ -322,7 +325,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: see findings
 - Notes: Checks run before the review: `terraform fmt -check -recursive` and `terraform init -backend=false` + `terraform validate` both pass. While writing the env I also found and removed a module-level `depends_on` that would have created a dependency cycle at plan time (UI SSM parameters → API internal LB → UI security group). It was replaced by a `config_version` input on the launch templates.
 
-### T-031 | 2026-10-18T09:20Z | phase 7
+### T-031 | 2026-10-18, between 07:57Z and 08:11Z | phase 7
 - Source: Self (user pasted a Codacy job log excerpt)
 - Why: Log shows `Failed analysis for trivy ... codacy-trivy/tool: Failed to configure Codacy Trivy: no patterns configured`, followed by the opengrep, duplication, metrics and jshint steps running.
 - Input: pasted log (user chat); workflow run status metadata from the Actions API: d752092, c325100 and 36cdbbb `completed success`; 545e457 (the run the log came from) in progress.
@@ -333,7 +336,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: none
 - Notes: none
 
-### T-030 | 2026-10-18T09:15Z | phase 7
+### T-030 | 2026-10-18T07:57:01Z | phase 7
 - Source: MCP sec-review/general_lightweight_security_review
 - Why: Server workflow step 1 before writing Dockerfiles, Compose, Makefile, smoke test, CI and the DB role command.
 - Input: evaluation/raw/T-030.input.json (components `container-and-iac,secrets-and-config,database,dependencies`; data_handled `secrets`)
@@ -344,7 +347,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: cad3a6b
 - Notes: Logged after T-031 in time order; T-031 was a user-relayed Codacy log handled in between.
 
-### T-032 | 2026-10-18T09:40Z | phase 7
+### T-032 | 2026-10-18T08:11Z | phase 7
 - Source: MCP sec-review/general_verify_code_security
 - Why: Server workflow step 3 for the phase 7 files, with T-030's components.
 - Input: evaluation/raw/T-032.input.json
@@ -355,7 +358,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: see findings
 - Notes: Verified before the review: `make up` (Compose via Podman), `make smoke` (SMOKE PASSED), `make lint`, `make typecheck`, `make tf-check`, `make test` (API 118 tests, 96.78% coverage; UI 62 tests, 96.6% lines). Problems found and fixed on the way: Podman OCI builds drop Dockerfile `HEALTHCHECK`, so healthchecks are also declared in Compose; the Makefile test teardown used a relative path after `cd api`; a unit test leaked `MIGRATION_DATABASE_URL` from the integration tests.
 
-### T-033 | 2026-10-18T09:55Z | phase 8
+### T-033 | 2026-10-18T08:15:49Z | phase 8
 - Source: MCP sec-review/threatmodel_update_threat_model_file
 - Why: Bring docs/threat-model.md in line with the finished code: final statuses, code references, and the two threats added during the build (F-077 webhook forgery, F-090 cross-service secret access).
 - Input: evaluation/raw/T-033.input.json (content identical to evaluation/raw/T-033.produced.json; `append: false`)
