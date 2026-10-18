@@ -231,7 +231,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: New relative to earlier entries: `dom-xss` / `safe-dom-apis`, and `third-party-script-compromise` / `subresource-integrity`. Applied by design: the UI ships no client-side JavaScript at all, serves its only stylesheet itself, and its CSP allows `'self'` only. Everything else confirms the UI half of existing requirements: CSRF, cookie flags, open redirect, output encoding, sanitisation, upload limits, generic errors, security headers, and sessions ended on the server. `jwt-tampering` and `long-lived-storage-credentials` do not apply (opaque tokens; no storage credentials in the browser).
 - Findings: F-085, F-086
 - Action: applied in the UI code (phase 5 commit)
-- Changes: ui/ (commit filled in below)
+- Changes: ui/ (72f10c3)
 - Notes: none
 
 ### T-022 | 2026-10-18T08:18Z | phase 5
@@ -242,7 +242,7 @@ Times are UTC from `date -u` at the time of the entry.
 - Interpretation: Source: all names and versions exist.
 - Findings: none
 - Action: none needed
-- Changes: ui/package.json, ui/package-lock.json (commit filled in below)
+- Changes: ui/package.json, ui/package-lock.json (72f10c3)
 - Notes: Called in parallel with T-023.
 
 ### T-023 | 2026-10-18T08:18Z | phase 5
