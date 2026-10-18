@@ -156,6 +156,10 @@ class FakeSessions:
         for key in [k for k, v in self.s.sessions.items() if v[0] == user_id]:
             del self.s.sessions[key]
 
+    def delete_expired_for_user(self, user_id: UUID, now: datetime) -> None:
+        for key in [k for k, v in self.s.sessions.items() if v[0] == user_id and v[1] <= now]:
+            del self.s.sessions[key]
+
 
 class FakeResetTokens:
     def __init__(self, store: Store) -> None:

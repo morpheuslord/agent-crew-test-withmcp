@@ -101,6 +101,11 @@ class SqlSessionRepository:
     def delete_for_user(self, user_id: UUID) -> None:
         self._s.execute(delete(SessionRow).where(SessionRow.user_id == user_id))
 
+    def delete_expired_for_user(self, user_id: UUID, now: datetime) -> None:
+        self._s.execute(
+            delete(SessionRow).where(SessionRow.user_id == user_id, SessionRow.expires_at <= now)
+        )
+
 
 class SqlResetTokenRepository:
     def __init__(self, session: Session) -> None:

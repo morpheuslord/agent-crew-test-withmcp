@@ -119,6 +119,10 @@ def test_sessions_expire_and_logout_ends_them(world: World) -> None:
     world.clock.advance(3601)
     with pytest.raises(AuthenticationRequiredError):
         world.auth.authenticate(other.token)
+    # F-078: issuing a new session purges the user's expired ones.
+    world.auth.login("ada@example.test", PASSWORD, "10.0.0.1")
+    assert hash_token(other.token) not in world.store.sessions
+    assert len(world.store.sessions) == 1
 
 
 def test_change_password_revokes_other_sessions(world: World) -> None:

@@ -126,8 +126,10 @@ class AuthService:
         return issued
 
     def _issue_session(self, user: User) -> IssuedSession:
+        now = self._clock.now()
+        self._sessions.delete_expired_for_user(user.id, now)
         token = new_token()
-        expires_at = self._clock.now() + timedelta(seconds=self._policy.session_ttl_seconds)
+        expires_at = now + timedelta(seconds=self._policy.session_ttl_seconds)
         self._sessions.add(user.id, hash_token(token), expires_at)
         return IssuedSession(token=token, expires_at=expires_at, user=user)
 
