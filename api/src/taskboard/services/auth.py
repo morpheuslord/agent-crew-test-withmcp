@@ -1,7 +1,7 @@
 """Accounts: registration, login, sessions, password change and reset."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 from urllib.parse import urlencode
 
@@ -137,17 +137,21 @@ class AuthService:
         return IssuedSession(token=token, expires_at=expires_at, user=user)
 
     def authenticate(self, token: str) -> User:
-        # The session lookup always hits the database, so logout and revocation take effect at
-        # once; only the profile is cached (and invalidated on every profile change).
-        user_id = self._sessions.find_user_id(hash_token(token), self._clock.now())
-        if user_id is None:
+        # The session, role and active flag always come from the database (F-080): a cache-aside
+        # race could otherwise write a stale role back after a demotion. Only display fields
+        # (email, name) come from the cached profile.
+        principal = self._sessions.find_principal(hash_token(token), self._clock.now())
+        if principal is None or not principal.is_active:
             raise AuthenticationRequiredError()
-        user = self._cache.get_or_load(
-            "user", CacheKeys.user(user_id), USER_ADAPTER, lambda: self._users.get(user_id)
+        profile = self._cache.get_or_load(
+            "user",
+            CacheKeys.user(principal.user_id),
+            USER_ADAPTER,
+            lambda: self._users.get(principal.user_id),
         )
-        if user is None or not user.is_active:
+        if profile is None:
             raise AuthenticationRequiredError()
-        return user
+        return replace(profile, role=principal.role, is_active=principal.is_active)
 
     def logout(self, token: str) -> None:
         self._sessions.delete(hash_token(token))

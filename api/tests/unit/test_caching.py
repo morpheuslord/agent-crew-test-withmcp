@@ -17,7 +17,7 @@ from taskboard.domain.errors import (
 )
 from taskboard.infra.cache.backends import InMemoryCache, NullCache, RedisCache
 from taskboard.infra.cache.base import CacheStats
-from taskboard.services.caching import CacheAside, CacheKeys
+from taskboard.services.caching import USER_ADAPTER, CacheAside, CacheKeys
 from taskboard.services.security import hash_token
 from tests.unit.conftest import World
 
@@ -165,6 +165,22 @@ def test_profile_cache_follows_admin_changes(world: World) -> None:
     world.store.sessions[hash_token(session.token)] = (session.user.id, later)
     with pytest.raises(AuthenticationRequiredError):
         world.auth.authenticate(session.token)
+
+
+def test_stale_cached_role_never_grants_access(world: World) -> None:
+    """F-080: simulate the race by writing an admin profile back after the demotion."""
+    admin = world.user("root", Role.ADMIN)
+    world.auth.register("ada@example.test", "Ada", "correct-horse-battery", "10.0.0.1")
+    session = world.auth.login("ada@example.test", "correct-horse-battery", "10.0.0.1")
+    world.admin.update_user(admin, session.user.id, role=Role.ADMIN, is_active=None)
+    stale = world.auth.authenticate(session.token)
+    assert stale.role is Role.ADMIN
+    world.admin.update_user(admin, session.user.id, role=Role.MEMBER, is_active=None)
+    backend_key = CacheKeys.user(session.user.id)
+    world.cache.get_or_load("user", backend_key, USER_ADAPTER, lambda: stale)
+    assert world.auth.authenticate(session.token).role is Role.MEMBER
+    with pytest.raises(PermissionDeniedError):
+        world.admin.list_users(world.auth.authenticate(session.token), 1, 10)
 
 
 def test_cache_stats_are_admin_only(world: World) -> None:

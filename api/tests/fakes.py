@@ -16,6 +16,7 @@ from taskboard.domain.entities import (
     OutboxMessage,
     Page,
     Project,
+    SessionPrincipal,
     StatusChangedEvent,
     Task,
     TaskChanges,
@@ -142,11 +143,12 @@ class FakeSessions:
     def add(self, user_id: UUID, token_hash: str, expires_at: datetime) -> None:
         self.s.sessions[token_hash] = (user_id, expires_at)
 
-    def find_user_id(self, token_hash: str, now: datetime) -> UUID | None:
+    def find_principal(self, token_hash: str, now: datetime) -> SessionPrincipal | None:
         entry = self.s.sessions.get(token_hash)
-        if entry is None or entry[1] <= now:
+        if entry is None or entry[1] <= now or entry[0] not in self.s.users:
             return None
-        return entry[0]
+        user = self.s.users[entry[0]]
+        return SessionPrincipal(user.id, user.role, user.is_active)
 
     def delete(self, token_hash: str) -> None:
         self.s.sessions.pop(token_hash, None)

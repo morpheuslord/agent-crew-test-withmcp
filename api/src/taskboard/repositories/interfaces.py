@@ -14,6 +14,7 @@ from taskboard.domain.entities import (
     OutboxMessage,
     Page,
     Project,
+    SessionPrincipal,
     Task,
     TaskChanges,
     TaskFilter,
@@ -54,8 +55,8 @@ class UserRepository(Protocol):
 class SessionRepository(Protocol):
     def add(self, user_id: UUID, token_hash: str, expires_at: datetime) -> None: ...
 
-    def find_user_id(self, token_hash: str, now: datetime) -> UUID | None:
-        """Return the id of the user owning an unexpired session, or ``None``."""
+    def find_principal(self, token_hash: str, now: datetime) -> SessionPrincipal | None:
+        """Return the owner of an unexpired session with their current role and status."""
         ...
 
     def delete(self, token_hash: str) -> None: ...

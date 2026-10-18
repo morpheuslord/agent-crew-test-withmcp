@@ -38,6 +38,15 @@ class UserCredentials:
 
 
 @dataclass(frozen=True, slots=True)
+class SessionPrincipal:
+    """Authorization-relevant facts about a session's user, always read from the database."""
+
+    user_id: UUID
+    role: Role
+    is_active: bool
+
+
+@dataclass(frozen=True, slots=True)
 class IssuedSession:
     """A freshly created session. ``token`` is the only copy of the raw secret."""
 

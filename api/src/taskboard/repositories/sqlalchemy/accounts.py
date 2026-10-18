@@ -7,7 +7,13 @@ from uuid import UUID
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
-from taskboard.domain.entities import OutboxMessage, Page, User, UserCredentials
+from taskboard.domain.entities import (
+    OutboxMessage,
+    Page,
+    SessionPrincipal,
+    User,
+    UserCredentials,
+)
 from taskboard.domain.enums import Role
 from taskboard.models.tables import OutboxRow, PasswordResetTokenRow, SessionRow, UserRow
 from taskboard.repositories.sqlalchemy.mappers import to_user
@@ -83,12 +89,15 @@ class SqlSessionRepository:
         self._s.add(SessionRow(user_id=user_id, token_hash=token_hash, expires_at=expires_at))
         self._s.flush()
 
-    def find_user_id(self, token_hash: str, now: datetime) -> UUID | None:
-        return self._s.scalar(
-            select(SessionRow.user_id).where(
-                SessionRow.token_hash == token_hash, SessionRow.expires_at > now
-            )
-        )
+    def find_principal(self, token_hash: str, now: datetime) -> SessionPrincipal | None:
+        row = self._s.execute(
+            select(UserRow.id, UserRow.role, UserRow.is_active)
+            .join(SessionRow, SessionRow.user_id == UserRow.id)
+            .where(SessionRow.token_hash == token_hash, SessionRow.expires_at > now)
+        ).first()
+        if row is None:
+            return None
+        return SessionPrincipal(user_id=row.id, role=Role(row.role), is_active=row.is_active)
 
     def delete(self, token_hash: str) -> None:
         self._s.execute(delete(SessionRow).where(SessionRow.token_hash == token_hash))
