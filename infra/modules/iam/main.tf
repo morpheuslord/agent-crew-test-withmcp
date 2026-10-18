@@ -83,10 +83,39 @@ resource "aws_iam_role" "service" {
 }
 
 # Shell access goes through SSM Session Manager (audited) instead of SSH keys and open ports.
-resource "aws_iam_role_policy_attachment" "ssm_core" {
-  for_each   = local.services
-  role       = aws_iam_role.service[each.key].name
-  policy_arn = "arn:${local.partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+# Deliberately not AmazonSSMManagedInstanceCore: that managed policy also allows
+# ssm:GetParameter(s) on every parameter, which would let one service read the other's secrets
+# (F-090). Only the agent's own control channels are granted here.
+data "aws_iam_policy_document" "session_manager" {
+  statement {
+    sid       = "SsmAgentRegistration"
+    actions   = ["ssm:UpdateInstanceInformation"]
+    resources = ["arn:${local.partition}:ec2:${local.region}:${local.account}:instance/*"]
+  }
+
+  statement {
+    sid = "SessionChannels"
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel",
+      "ec2messages:AcknowledgeMessage",
+      "ec2messages:DeleteMessage",
+      "ec2messages:FailMessage",
+      "ec2messages:GetEndpoint",
+      "ec2messages:GetMessages",
+      "ec2messages:SendReply",
+    ]
+    resources = ["*"] # These actions do not support resource-level permissions.
+  }
+}
+
+resource "aws_iam_role_policy" "session_manager" {
+  for_each = local.services
+  name     = "session-manager"
+  role     = aws_iam_role.service[each.key].id
+  policy   = data.aws_iam_policy_document.session_manager.json
 }
 
 data "aws_iam_policy_document" "common" {
@@ -125,6 +154,12 @@ data "aws_iam_policy_document" "common" {
       test     = "StringEquals"
       variable = "kms:ViaService"
       values   = ["ssm.${local.region}.amazonaws.com"]
+    }
+    # Decrypt only this service's own parameters, whatever other policies allow reading.
+    condition {
+      test     = "StringLike"
+      variable = "kms:EncryptionContext:PARAMETER_ARN"
+      values   = ["arn:${local.partition}:ssm:${local.region}:${local.account}:parameter${var.ssm_prefix}/${each.key}/*"]
     }
   }
 
