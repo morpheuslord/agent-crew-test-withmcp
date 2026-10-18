@@ -1,0 +1,9 @@
+{
+  "tool": "mcp__sec-review__general_lightweight_security_review",
+  "arguments": {
+    "task_description": "Build Taskboard, an internal team task tracker. Two services: a Python 3.13 FastAPI REST API (/api/v1, OpenAPI) that is the only component talking to PostgreSQL 16, Redis 7 (cache-aside cache) and attachment storage (local filesystem in dev, Amazon S3 in AWS); and a Node.js 24 Express 5 + EJS UI server that renders pages, authenticates browser users and calls the API over an internal network. Features: register/login/logout with email+password, change password, forgot-password reset links (emails written to log and an outbox table), first admin created by a management command from env vars, admin user management (roles admin/member, deactivate/reactivate). Teams with owners and members added by email; projects inside teams (archive = read-only) with an optional outbound webhook URL that receives an async JSON POST with retry when a task changes status. Tasks with Markdown descriptions rendered as HTML, comments (Markdown), file attachments of any type up to 10 MB with download by original filename. Search across visible projects with free text, filters, client-supplied sort field and direction, pagination. CSV export of a project's tasks. Activity feed per project and global for admins. Deployed to AWS EC2 behind an ALB with Terraform (VPC, private subnets, RDS, ElastiCache, S3, ECR, IAM), Docker images bootstrapped via user_data.",
+    "components": "authentication,session-management,authorization,secrets-and-config,transport-security",
+    "data_handled": "credentials,personal_data",
+    "technologies": "Python 3.13, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, redis-py, PostgreSQL 16, Redis 7, Node.js 24, TypeScript, Express 5, EJS, Docker, Terraform, AWS EC2, ALB, RDS, ElastiCache, S3"
+  }
+}

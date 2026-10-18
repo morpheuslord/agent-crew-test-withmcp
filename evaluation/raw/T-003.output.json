@@ -1,0 +1,677 @@
+{
+  "success": true,
+  "tool": "perform_threat_model",
+  "template": {
+    "template_version": "1.0",
+    "instructions": "Use this template to structure your threat model output. Fill in each section based on the artifacts provided. Every threat MUST include at least one reference linking it to concrete evidence (code path, artifact, ticket, or document). Write threats in plain language — describe attack scenarios a developer would understand, not abstract security categories.",
+    "sections": {
+      "title": {
+        "description": "Name of the feature or component being threat modeled",
+        "example": "User Authentication Service Redesign"
+      },
+      "description": {
+        "description": "What are we building? Summary of the change/feature",
+        "example": "Migrating from session-based auth to JWT tokens with refresh token rotation"
+      },
+      "author": {
+        "description": "Who is creating this threat model",
+        "example": "security-review-mcp"
+      },
+      "data_touched": {
+        "description": "What data does this feature touch? Include data flows, storage, PII, secrets",
+        "example": [
+          "User credentials (email, password hash)",
+          "JWT tokens stored in httpOnly cookies",
+          "Refresh tokens in Redis with 7-day TTL",
+          "User profile data in PostgreSQL"
+        ]
+      },
+      "technologies": {
+        "description": "Tech stack involved",
+        "example": [
+          "Python",
+          "FastAPI",
+          "PostgreSQL",
+          "Redis",
+          "JWT"
+        ]
+      },
+      "threats": {
+        "description": "List of identified threats. Each must link to evidence.",
+        "fields": {
+          "id": "Short identifier like TM-1, TM-2",
+          "what_can_go_wrong": "Plain-language attack scenario. e.g., 'Attacker steals JWT from localStorage and impersonates user'",
+          "impact": "Business impact. e.g., 'Full account takeover, access to user's payment data'",
+          "likelihood": "high, medium, or low",
+          "data_affected": "List of data types at risk",
+          "mitigation": "What we're doing or should do about it",
+          "status": "open, in_progress, mitigated, or accepted",
+          "references": {
+            "description": "Evidence linking this threat to code or artifacts",
+            "fields": {
+              "type": "code, artifact, ticket, document, or url",
+              "location": "File path, URL, or ticket key",
+              "description": "What this reference proves",
+              "snippet": "Optional inline code/text evidence"
+            }
+          },
+          "accepted_risk": "If status is 'accepted', justification for accepting"
+        }
+      }
+    },
+    "output_format": "Return the threat model as a JSON object matching the ThreatModelOutput structure. The tool will handle rendering it as markdown for threat-model.md if the user approves."
+  },
+  "feature": {
+    "title": "Taskboard (whole system)",
+    "description": "Taskboard is an internal team task tracker. Users register and log in with email and password, create teams, add teammates by email, create projects in teams, and manage tasks with Markdown descriptions, Markdown comments and file attachments (any type, up to 10 MB). Projects can have an outbound webhook URL that receives a JSON POST when a task's status changes. Admins manage users (roles, deactivate) and see a global activity feed. Search with client-supplied sort field and direction, CSV export, forgot-password reset links (emails go to log and an outbox table)."
+  },
+  "artifacts": {
+    "data_flows": "Browser --HTTPS--> ALB --HTTP--> UI server (Express, EJS). UI server holds the user's opaque API session token in an HttpOnly SameSite cookie and calls the API over the private network with Authorization: Bearer <session token>, X-Service-Token (shared secret proving the caller is the UI server), X-Request-ID and X-Client-IP. API (FastAPI) validates the session token against a hashed sessions table in PostgreSQL, enforces team membership and role checks, reads/writes PostgreSQL, uses Redis for cache-aside reads, stores attachment bytes on a local volume or S3 under random keys. API sends webhook POSTs from a background thread to user-configured URLs. UI renders Markdown to sanitized HTML. Attachment downloads stream API -> UI -> browser with Content-Disposition: attachment.",
+    "tech_stack": [
+      "Python 3.13",
+      "FastAPI",
+      "Pydantic v2",
+      "SQLAlchemy 2",
+      "Alembic",
+      "PostgreSQL 16",
+      "Redis 7",
+      "Node.js 24",
+      "TypeScript",
+      "Express 5",
+      "EJS",
+      "Docker",
+      "Terraform",
+      "AWS EC2",
+      "ALB",
+      "RDS",
+      "ElastiCache",
+      "S3"
+    ],
+    "architecture_notes": "The API is never internet-exposed: only the UI port is published in Docker Compose, and in AWS the API instances sit in private subnets with a security group that only admits the UI security group. ALB terminates TLS. Secrets (DB password, Redis auth token, service token, CSRF/cookie secret) come from environment variables populated from AWS SSM Parameter Store at boot. One composition root per service wires interfaces (repositories, cache, storage, mailer, webhook notifier) to implementations."
+  },
+  "known_threats": {
+    "status": "from_library",
+    "risk_level": "critical",
+    "components": [
+      "authentication",
+      "authorization",
+      "file-upload",
+      "outbound-http-request",
+      "user-generated-content"
+    ],
+    "implied_components": [
+      "web-endpoint"
+    ],
+    "sensitive_data": [
+      "credentials",
+      "personal_data"
+    ],
+    "threats": [
+      {
+        "id": "missing-function-authorization",
+        "name": "A user calls an admin or other-role function because only the UI hides it",
+        "severity": "critical",
+        "cwe": [
+          "CWE-862"
+        ]
+      },
+      {
+        "id": "weak-password-storage",
+        "name": "Passwords are stored in plain text or with a fast hash, so a database leak exposes them",
+        "severity": "critical",
+        "cwe": [
+          "CWE-916"
+        ]
+      },
+      {
+        "id": "archive-path-traversal",
+        "name": "An uploaded archive writes files outside the target folder when extracted",
+        "severity": "high",
+        "cwe": [
+          "CWE-22"
+        ]
+      },
+      {
+        "id": "credential-stuffing",
+        "name": "Attackers try leaked or guessed passwords against your login at scale",
+        "severity": "high",
+        "cwe": [
+          "CWE-307"
+        ]
+      },
+      {
+        "id": "default-accounts",
+        "name": "Default or hardcoded admin accounts are left active",
+        "severity": "high",
+        "cwe": [
+          "CWE-798"
+        ]
+      },
+      {
+        "id": "insecure-password-reset",
+        "name": "Password reset can be abused to take over accounts",
+        "severity": "high",
+        "cwe": [
+          "CWE-640"
+        ]
+      },
+      {
+        "id": "object-id-guessing",
+        "name": "One user reads or changes another user's data by changing an id in the request",
+        "severity": "high",
+        "cwe": [
+          "CWE-639"
+        ]
+      },
+      {
+        "id": "predictable-tokens",
+        "name": "Session ids, reset tokens, or API keys can be guessed",
+        "severity": "high",
+        "cwe": [
+          "CWE-330"
+        ]
+      },
+      {
+        "id": "role-self-assignment",
+        "name": "A user grants themselves a higher role through a profile or signup request",
+        "severity": "high",
+        "cwe": [
+          "CWE-269"
+        ]
+      },
+      {
+        "id": "ssrf",
+        "name": "The server is tricked into fetching internal addresses or cloud metadata",
+        "severity": "high",
+        "cwe": [
+          "CWE-918"
+        ]
+      },
+      {
+        "id": "stored-xss",
+        "name": "Attacker-supplied content is shown to other users as HTML or script",
+        "severity": "high",
+        "cwe": [
+          "CWE-79"
+        ]
+      },
+      {
+        "id": "tenant-data-leak",
+        "name": "Queries miss the tenant filter, so customers see each other's data",
+        "severity": "high",
+        "cwe": [
+          "CWE-284"
+        ]
+      },
+      {
+        "id": "tls-verification-disabled",
+        "name": "Outbound calls skip certificate checks, so traffic can be intercepted",
+        "severity": "high",
+        "cwe": [
+          "CWE-295"
+        ]
+      },
+      {
+        "id": "upload-executable-file",
+        "name": "Attacker uploads a script that your server runs or serves",
+        "severity": "high",
+        "cwe": [
+          "CWE-434"
+        ]
+      },
+      {
+        "id": "upload-path-traversal",
+        "name": "Attacker uses ../ in a filename to overwrite files",
+        "severity": "high",
+        "cwe": [
+          "CWE-22"
+        ]
+      },
+      {
+        "id": "no-second-factor",
+        "name": "A stolen password is enough to take over sensitive accounts",
+        "severity": "medium",
+        "cwe": [
+          "CWE-308"
+        ]
+      },
+      {
+        "id": "poisoned-email-links",
+        "name": "Links in emails are built from the Host header, so attackers redirect reset links",
+        "severity": "medium",
+        "cwe": [
+          "CWE-640"
+        ]
+      },
+      {
+        "id": "upload-active-content",
+        "name": "An uploaded SVG or HTML file runs script when other users open it",
+        "severity": "medium",
+        "cwe": [
+          "CWE-79"
+        ]
+      },
+      {
+        "id": "upload-resource-exhaustion",
+        "name": "Huge files or compression bombs fill disk or memory",
+        "severity": "medium",
+        "cwe": [
+          "CWE-770"
+        ]
+      },
+      {
+        "id": "weak-password-rules",
+        "name": "Short or restricted passwords are easy to guess",
+        "severity": "medium",
+        "cwe": [
+          "CWE-521"
+        ]
+      },
+      {
+        "id": "no-security-logging",
+        "name": "Logins and access failures are not logged, so attacks go unnoticed",
+        "severity": "low",
+        "cwe": [
+          "CWE-778"
+        ]
+      },
+      {
+        "id": "no-timeouts-or-size-caps",
+        "name": "A slow or huge remote response ties up workers and memory",
+        "severity": "low",
+        "cwe": [
+          "CWE-400"
+        ]
+      },
+      {
+        "id": "user-enumeration",
+        "name": "Login or reset responses reveal which emails have accounts",
+        "severity": "low",
+        "cwe": [
+          "CWE-204"
+        ]
+      }
+    ],
+    "countermeasures": [
+      {
+        "id": "check-permissions-server-side",
+        "name": "Check permissions on the server for every action",
+        "how_to": "Enforce role and permission checks in a central layer on each endpoint, not only by hiding UI.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-8.2.1",
+          "v5.0.0-8.3.1"
+        ],
+        "mitigates": [
+          "missing-function-authorization",
+          "role-self-assignment"
+        ]
+      },
+      {
+        "id": "slow-password-hashing",
+        "name": "Hash passwords with a slow, salted algorithm",
+        "how_to": "Use Argon2id, scrypt, or bcrypt through your framework's password helper. Never use MD5 or SHA for passwords.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-11.4.2"
+        ],
+        "mitigates": [
+          "weak-password-storage"
+        ]
+      },
+      {
+        "id": "safe-archive-extraction",
+        "name": "Extract archives safely",
+        "how_to": "Ignore paths inside archives, reject symlinks and entries that escape the target folder, and cap size and file count.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-5.3.3",
+          "v5.0.0-5.2.3"
+        ],
+        "mitigates": [
+          "archive-path-traversal"
+        ]
+      },
+      {
+        "id": "login-attempt-limits",
+        "name": "Slow down repeated login failures",
+        "how_to": "Throttle or temporarily lock after repeated failures per account and per IP, without making lockout itself a denial-of-service tool.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-6.3.1"
+        ],
+        "mitigates": [
+          "credential-stuffing"
+        ]
+      },
+      {
+        "id": "breached-password-check",
+        "name": "Reject known-breached passwords",
+        "how_to": "Check new passwords against a breached-password list (for example the Pwned Passwords range API) at signup and change.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-6.2.4",
+          "v5.0.0-6.2.12"
+        ],
+        "mitigates": [
+          "credential-stuffing",
+          "weak-password-rules"
+        ]
+      },
+      {
+        "id": "offer-mfa",
+        "name": "Offer or require a second factor",
+        "how_to": "Support an authenticator app or passkeys, and require it for admins and sensitive actions.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-6.3.3"
+        ],
+        "mitigates": [
+          "credential-stuffing",
+          "no-second-factor"
+        ]
+      },
+      {
+        "id": "remove-default-accounts",
+        "name": "Remove default and hardcoded accounts",
+        "how_to": "Ship no preset admin users. Create the first admin through a one-time setup step with a strong generated password.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-6.3.2"
+        ],
+        "mitigates": [
+          "default-accounts"
+        ]
+      },
+      {
+        "id": "secure-reset-flow",
+        "name": "Make password reset single-use and short-lived",
+        "how_to": "Send a random single-use token that expires in minutes. Show the same response whether or not the account exists, and keep MFA in force.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-6.4.1",
+          "v5.0.0-6.4.3"
+        ],
+        "mitigates": [
+          "insecure-password-reset"
+        ]
+      },
+      {
+        "id": "per-object-authorization",
+        "name": "Check the user owns the object on every request",
+        "how_to": "Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-8.2.2",
+          "v5.0.0-8.3.1"
+        ],
+        "mitigates": [
+          "object-id-guessing"
+        ]
+      },
+      {
+        "id": "crypto-random-tokens",
+        "name": "Generate tokens with a cryptographic random source",
+        "how_to": "Use secrets.token_urlsafe, crypto.randomBytes, or the framework default. Never use Math.random, time, or counters.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-7.2.3",
+          "v5.0.0-11.5.1"
+        ],
+        "mitigates": [
+          "predictable-tokens"
+        ]
+      },
+      {
+        "id": "allow-list-fields",
+        "name": "Accept only the fields you expect",
+        "how_to": "Bind requests to an explicit schema or DTO with allowed fields. Never copy a request body straight onto a model.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-15.3.3"
+        ],
+        "mitigates": [
+          "role-self-assignment"
+        ]
+      },
+      {
+        "id": "ssrf-allow-list",
+        "name": "Fetch only allow-listed destinations",
+        "how_to": "Resolve the host, block private, loopback, and link-local ranges including cloud metadata, and prefer a fixed allow-list of hosts.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-1.3.6",
+          "v5.0.0-13.2.4"
+        ],
+        "mitigates": [
+          "ssrf"
+        ]
+      },
+      {
+        "id": "no-redirect-following",
+        "name": "Do not follow redirects on server-side fetches",
+        "how_to": "Disable automatic redirects, or re-validate each hop against the same allow-list.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-15.3.2"
+        ],
+        "mitigates": [
+          "ssrf"
+        ]
+      },
+      {
+        "id": "output-encoding",
+        "name": "Encode output for its context",
+        "how_to": "Use your template engine's automatic escaping, and encode correctly for HTML, attributes, URLs, and JavaScript.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-1.2.1",
+          "v5.0.0-1.2.2",
+          "v5.0.0-1.2.3"
+        ],
+        "mitigates": [
+          "stored-xss"
+        ]
+      },
+      {
+        "id": "sanitize-html",
+        "name": "Sanitize user-provided HTML",
+        "how_to": "Run user HTML through a maintained sanitizer such as DOMPurify or bleach with a strict allow-list. Prefer markdown or plain text.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-1.3.1"
+        ],
+        "mitigates": [
+          "stored-xss",
+          "upload-active-content"
+        ]
+      },
+      {
+        "id": "scope-queries-to-tenant",
+        "name": "Scope every query to the tenant",
+        "how_to": "Apply the tenant filter in one place, such as a query helper or row-level security, so no query can forget it.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-8.2.2"
+        ],
+        "mitigates": [
+          "tenant-data-leak"
+        ]
+      },
+      {
+        "id": "validate-tls-certificates",
+        "name": "Always verify TLS certificates",
+        "how_to": "Never set verify=False or NODE_TLS_REJECT_UNAUTHORIZED=0. Add your private CA to the trust store if needed.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-12.3.2"
+        ],
+        "mitigates": [
+          "tls-verification-disabled"
+        ]
+      },
+      {
+        "id": "upload-allow-list",
+        "name": "Allow only the file types you need",
+        "how_to": "Check the extension and the real file content against an allow-list. Ignore the client's Content-Type.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-5.2.2"
+        ],
+        "mitigates": [
+          "upload-executable-file"
+        ]
+      },
+      {
+        "id": "upload-rename-and-isolate",
+        "name": "Never use the user's filename or path",
+        "how_to": "Generate your own filenames, store files outside the web root, and make sure uploads are never executed.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-5.3.1",
+          "v5.0.0-5.3.2"
+        ],
+        "mitigates": [
+          "upload-executable-file",
+          "upload-path-traversal"
+        ]
+      },
+      {
+        "id": "fixed-base-url-for-links",
+        "name": "Build links from a configured base URL",
+        "how_to": "Take the public base URL from configuration, not from the Host or X-Forwarded headers of the request.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-4.1.3"
+        ],
+        "mitigates": [
+          "poisoned-email-links"
+        ]
+      },
+      {
+        "id": "serve-uploads-safely",
+        "name": "Serve uploads so browsers cannot run them",
+        "how_to": "Send the correct Content-Type, Content-Disposition attachment for downloads, nosniff, and serve user files from a separate domain.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-4.1.1",
+          "v5.0.0-5.4.2",
+          "v5.0.0-3.2.1"
+        ],
+        "mitigates": [
+          "upload-active-content"
+        ]
+      },
+      {
+        "id": "upload-size-limits",
+        "name": "Limit file size and decompressed size",
+        "how_to": "Set a maximum size per file, and cap decompressed size and file count for archives.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-5.2.1",
+          "v5.0.0-5.2.3"
+        ],
+        "mitigates": [
+          "upload-resource-exhaustion"
+        ]
+      },
+      {
+        "id": "sensible-password-rules",
+        "name": "Use length-based password rules",
+        "how_to": "Require a minimum length (15 or more is better), allow long passphrases and any characters, and skip composition rules.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-6.2.1",
+          "v5.0.0-6.2.5",
+          "v5.0.0-6.2.9"
+        ],
+        "mitigates": [
+          "weak-password-rules"
+        ]
+      },
+      {
+        "id": "log-security-events",
+        "name": "Log security-relevant events",
+        "how_to": "Log logins, failures, permission denials, and admin actions with time, user, and source, and alert on spikes.",
+        "effort": "medium",
+        "asvs": [
+          "v5.0.0-16.3.1",
+          "v5.0.0-16.3.2"
+        ],
+        "mitigates": [
+          "no-security-logging"
+        ]
+      },
+      {
+        "id": "timeouts-and-size-caps",
+        "name": "Set timeouts and response size caps",
+        "how_to": "Use connect and read timeouts and a maximum body size on every outbound call and queue consumer.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-15.2.2"
+        ],
+        "mitigates": [
+          "no-timeouts-or-size-caps"
+        ]
+      },
+      {
+        "id": "generic-error-messages",
+        "name": "Return generic errors to users",
+        "how_to": "Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.",
+        "effort": "low",
+        "asvs": [
+          "v5.0.0-16.5.1"
+        ],
+        "mitigates": [
+          "user-enumeration"
+        ]
+      }
+    ],
+    "also_consider": [
+      {
+        "id": "cleartext-transport",
+        "name": "Sensitive data travels over plain HTTP or an unencrypted connection",
+        "severity": "high"
+      },
+      {
+        "id": "debug-mode-in-production",
+        "name": "Debug features or consoles are left on in production",
+        "severity": "high"
+      },
+      {
+        "id": "exposed-config-files",
+        "name": ".env, .git, or backup files are reachable from the web",
+        "severity": "high"
+      },
+      {
+        "id": "mass-assignment",
+        "name": "A request sets fields the user should not control, such as role or price",
+        "severity": "high"
+      },
+      {
+        "id": "business-flow-bypass",
+        "name": "A user skips or repeats steps in a multi-step flow, such as verification or checkout",
+        "severity": "medium"
+      },
+      {
+        "id": "csrf",
+        "name": "Another website makes a logged-in user's browser perform actions",
+        "severity": "medium"
+      },
+      {
+        "id": "excessive-data-exposure",
+        "name": "API responses include more fields than the client needs, such as hashes or internal ids",
+        "severity": "medium"
+      },
+      {
+        "id": "missing-input-validation",
+        "name": "Unvalidated input reaches business logic and breaks assumptions",
+        "severity": "medium"
+      }
+    ]
+  },
+  "instructions": "Analyze the provided artifacts using known_threats as a starting checklist: keep the ones that apply, drop the ones that do not, and add scenarios specific to these artifacts. Generate a threat model following the template structure. Each threat MUST reference specific evidence from the artifacts (code paths, data flows, architecture decisions). Write threats in plain developer language. Focus on concrete attack scenarios, not abstract categories.",
+  "output_instructions": "After analyzing the artifacts and known threats, return a JSON object matching the template structure with all threats identified. Each threat MUST include at least one reference with evidence. Use the parse format described in the template.",
+  "suggest_file_update": true,
+  "file_update_message": "After generating the threat model, ask the user: 'Would you like me to save this threat model to threat-model.md?' If they agree, use the update_threat_model_file tool with the generated content."
+}

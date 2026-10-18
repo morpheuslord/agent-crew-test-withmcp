@@ -1,0 +1,12 @@
+{
+  "tool": "mcp__sec-review__threatmodel_perform_threat_model",
+  "arguments": {
+    "title": "Taskboard (whole system)",
+    "description": "Taskboard is an internal team task tracker. Users register and log in with email and password, create teams, add teammates by email, create projects in teams, and manage tasks with Markdown descriptions, Markdown comments and file attachments (any type, up to 10 MB). Projects can have an outbound webhook URL that receives a JSON POST when a task's status changes. Admins manage users (roles, deactivate) and see a global activity feed. Search with client-supplied sort field and direction, CSV export, forgot-password reset links (emails go to log and an outbox table).",
+    "components": "authentication,authorization,file-upload,outbound-http-request,user-generated-content",
+    "data_handled": "credentials,personal_data",
+    "tech_stack": "Python 3.13, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, PostgreSQL 16, Redis 7, Node.js 24, TypeScript, Express 5, EJS, Docker, Terraform, AWS EC2, ALB, RDS, ElastiCache, S3",
+    "data_flows": "Browser --HTTPS--> ALB --HTTP--> UI server (Express, EJS). UI server holds the user's opaque API session token in an HttpOnly SameSite cookie and calls the API over the private network with Authorization: Bearer <session token>, X-Service-Token (shared secret proving the caller is the UI server), X-Request-ID and X-Client-IP. API (FastAPI) validates the session token against a hashed sessions table in PostgreSQL, enforces team membership and role checks, reads/writes PostgreSQL, uses Redis for cache-aside reads, stores attachment bytes on a local volume or S3 under random keys. API sends webhook POSTs from a background thread to user-configured URLs. UI renders Markdown to sanitized HTML. Attachment downloads stream API -> UI -> browser with Content-Disposition: attachment.",
+    "architecture_notes": "The API is never internet-exposed: only the UI port is published in Docker Compose, and in AWS the API instances sit in private subnets with a security group that only admits the UI security group. ALB terminates TLS. Secrets (DB password, Redis auth token, service token, CSRF/cookie secret) come from environment variables populated from AWS SSM Parameter Store at boot. One composition root per service wires interfaces (repositories, cache, storage, mailer, webhook notifier) to implementations."
+  }
+}
