@@ -130,3 +130,17 @@ Short ADR-style records. "Driven by" says where the decision came from: the brie
   (`DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`). The Compose file and Makefile use plain `docker compose`.
 - **Reason:** The build session cannot access the host Docker socket. Nothing in the repo depends on Podman.
 - **Driven by:** Environment constraint.
+
+## ADR-016: Additional Semgrep and Trivy code scanning workflows
+
+- **Decision:** Added `.github/workflows/semgrep.yml` and `.github/workflows/trivy.yml`. Both run on push to `main`
+  and upload SARIF to GitHub code scanning. Each has two jobs. Semgrep scans the whole repo with the registry rule sets
+  `p/default`, `p/python`, `p/typescript`, `p/javascript`, `p/nodejs`, `p/dockerfile`, `p/github-actions`,
+  `p/secrets` and `p/owasp-top-ten` (category `semgrep-code`), and scans `infra/` with `p/terraform`
+  (`semgrep-terraform`). Trivy runs `fs` over the repo with the vuln, secret and misconfig scanners
+  (`trivy-repository`) and `config` over `infra/` (`trivy-terraform`). Findings never fail the job. The original
+  `codeql.yml`, `codacy.yml` and `.codacy.yml` are unchanged.
+- **Reason:** Requested by the user mid-session. `aquasecurity/trivy-action` is pinned by commit SHA
+  (`ed142fd…`, tag v0.36.0) because several of its older release tags were re-published in March 2026. Trivy itself is
+  pinned to v0.76.0, and Semgrep runs from the version-tagged `semgrep/semgrep:1.181.0` image with metrics off.
+- **Driven by:** User instruction in chat (2026-10-18), outside the original brief.

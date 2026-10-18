@@ -87,6 +87,13 @@ Call `general_verify_code_security` with the same `components`. Do not paste cod
 ## 4. Persisting thre… [truncated]
 ```
 
+## Deviations from the brief requested by the user
+
+- 2026-10-18T06:33Z: the user asked in chat for Semgrep and Trivy code scanning workflows (whole repo plus a
+  Terraform-specific scan, SARIF uploaded to GitHub code scanning). They were added as
+  `.github/workflows/semgrep.yml` and `.github/workflows/trivy.yml` (DECISIONS ADR-016, tool-log T-006). Arm B may not
+  have them, which matters when comparing scanner results between the two builds.
+
 ## Checks skipped
 
 _Filled in at wrap-up._

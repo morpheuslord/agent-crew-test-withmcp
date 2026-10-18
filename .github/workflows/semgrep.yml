@@ -1,0 +1,53 @@
+name: Semgrep
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: Semgrep (${{ matrix.target.name }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    container:
+      image: semgrep/semgrep:1.181.0
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # Whole repository: application code, Dockerfiles, workflows, secrets.
+          - name: code
+            path: .
+            rules: >-
+              p/default p/python p/typescript p/javascript p/nodejs
+              p/dockerfile p/github-actions p/secrets p/owasp-top-ten
+          # Terraform on its own so IaC results get their own category.
+          - name: terraform
+            path: infra
+            rules: p/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run Semgrep
+        env:
+          # Space-separated rule sets; semgrep reads this when --config is not given.
+          SEMGREP_RULES: ${{ matrix.target.rules }}
+          SEMGREP_PATH: ${{ matrix.target.path }}
+        run: semgrep scan --metrics off --sarif --output semgrep.sarif "$SEMGREP_PATH"
+
+      - name: Upload SARIF to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep-${{ matrix.target.name }}

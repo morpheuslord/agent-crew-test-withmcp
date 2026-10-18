@@ -1,0 +1,57 @@
+name: Trivy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trivy:
+    name: Trivy (${{ matrix.target.name }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # Whole repository: dependency CVEs from lockfiles, secrets, and
+          # misconfigurations in Dockerfiles, Compose and Terraform.
+          - name: repository
+            scan-type: fs
+            scan-ref: .
+            scanners: vuln,secret,misconfig
+          # Terraform only, so IaC misconfigurations get their own category.
+          - name: terraform
+            scan-type: config
+            scan-ref: infra
+            scanners: misconfig
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy
+        # v0.36.0, pinned by commit SHA.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          version: v0.76.0
+          scan-type: ${{ matrix.target.scan-type }}
+          scan-ref: ${{ matrix.target.scan-ref }}
+          scanners: ${{ matrix.target.scanners }}
+          format: sarif
+          output: trivy.sarif
+          exit-code: '0'
+
+      - name: Upload SARIF to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-${{ matrix.target.name }}

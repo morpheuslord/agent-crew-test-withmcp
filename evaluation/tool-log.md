@@ -57,3 +57,14 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: none needed; the phase 2 push includes the API package skeleton, so later runs see Python source
 - Changes: none
 - Notes: none
+
+### T-006 | 2026-10-18T06:33Z | phase 2
+- Source: Self (user instruction in chat)
+- Why: The user asked mid-session for Semgrep and Trivy workflows that scan all the code, scan the Terraform in particular, and record everything in GitHub's security findings (code scanning).
+- Input: user message: "few scanner enhancements add a semgrep workflow along with a trivy workflow and this time its to scan all the code and also perticularly scan the teraform as well and everything should be recorded in the securities fingings page in github"
+- Output: `.github/workflows/semgrep.yml` (jobs `code` over `.` and `terraform` over `infra/`) and `.github/workflows/trivy.yml` (jobs `repository`: fs with vuln, secret and misconfig scanners; `terraform`: config over `infra/`). Each job uploads SARIF with its own category.
+- Interpretation: Supply-chain hygiene for the new workflows: looked up current releases via the GitHub API and Docker Hub. trivy-action v0.33.1, v0.34.0 and v0.35.0 all show `published_at` 2026-03-20, consistent with tags having been re-published, so the action is pinned to the v0.36.0 commit `ed142fd0673e97e23eac54620cfb913e5ce36c25` instead of a tag. Checked that all 10 Semgrep registry rule sets resolve (HTTP 200).
+- Findings: none
+- Action: applied. The first draft used an inline `# shellcheck disable=SC2086` comment; I replaced it with Semgrep's `SEMGREP_RULES` environment variable so no suppression was added.
+- Changes: .github/workflows/semgrep.yml, .github/workflows/trivy.yml, docs/DECISIONS.md (ADR-016)
+- Notes: Section 10 still applies: I do not read scanner results, and the three original scanner files are unchanged. The `infra/` jobs have nothing to scan until phase 6 lands.
