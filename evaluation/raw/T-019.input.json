@@ -1,0 +1,7 @@
+{
+  "tool": "mcp__sec-review__general_verify_code_security",
+  "arguments": {
+    "components": "database,authorization,serialization-and-parsing,logging-and-errors",
+    "file_path": "api/src/taskboard/services/caching.py, api/src/taskboard/infra/cache/"
+  }
+}

@@ -12,6 +12,8 @@ from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from taskboard.config import Settings, StorageBackend
+from taskboard.infra.cache.backends import NullCache, RedisCache
+from taskboard.infra.cache.base import CacheStats
 from taskboard.infra.mailer import LogOutboxMailer
 from taskboard.infra.rate_limit import InMemoryRateLimiter, RateLimiter, RedisRateLimiter
 from taskboard.infra.storage.base import AttachmentStorage
@@ -37,6 +39,7 @@ from taskboard.services.access import AccessPolicy
 from taskboard.services.activity import ActivityService
 from taskboard.services.attachments import AttachmentService
 from taskboard.services.auth import AuthPolicy, AuthService
+from taskboard.services.caching import CacheAside
 from taskboard.services.comments import CommentService
 from taskboard.services.export import CsvExporter
 from taskboard.services.projects import ProjectService
@@ -62,6 +65,7 @@ class Infrastructure:
     limiter: RateLimiter
     hasher: PasswordHasher
     clock: Clock
+    cache: CacheAside
     redis_client: redis.Redis | None = None
     extras: dict[str, object] = field(default_factory=dict)
 
@@ -136,6 +140,11 @@ def build_infrastructure(settings: Settings) -> Infrastructure:
         limiter=limiter,
         hasher=Argon2PasswordHasher(),
         clock=SystemClock(),
+        cache=CacheAside(
+            RedisCache(redis_client) if redis_client is not None else NullCache(),
+            CacheStats(),
+            settings.cache_ttl_seconds,
+        ),
         redis_client=redis_client,
     )
 
@@ -184,17 +193,22 @@ class RequestServices:
                 register_max_per_ip=s.register_max_per_ip,
                 rate_limit_window_seconds=s.rate_limit_window_seconds,
             ),
+            cache=self._infra.cache,
         )
 
     @cached_property
     def user_admin(self) -> UserAdminService:
         return UserAdminService(
-            users=self.users, sessions=self.sessions, access=self.access, uow=self.uow
+            users=self.users,
+            sessions=self.sessions,
+            access=self.access,
+            uow=self.uow,
+            cache=self._infra.cache,
         )
 
     @cached_property
     def provisioner(self) -> AdminProvisioner:
-        return AdminProvisioner(self.users, self._infra.hasher, self.uow)
+        return AdminProvisioner(self.users, self._infra.hasher, self.uow, self._infra.cache)
 
     @cached_property
     def teams(self) -> TeamService:
@@ -205,6 +219,7 @@ class RequestServices:
             access=self.access,
             activity=self.activity,
             uow=self.uow,
+            cache=self._infra.cache,
         )
 
     @cached_property
@@ -217,6 +232,7 @@ class RequestServices:
             signing_keys=self._infra.webhook_keys,
             clock=self._infra.clock,
             uow=self.uow,
+            cache=self._infra.cache,
         )
 
     @cached_property
@@ -231,6 +247,7 @@ class RequestServices:
             notifier=self._infra.notifier,
             clock=self._infra.clock,
             uow=self.uow,
+            cache=self._infra.cache,
         )
 
     @cached_property

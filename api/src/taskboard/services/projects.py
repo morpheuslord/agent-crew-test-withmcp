@@ -9,6 +9,7 @@ from taskboard.domain.errors import ProjectArchivedError
 from taskboard.infra.webhooks.url_policy import WebhookUrlPolicy
 from taskboard.repositories.interfaces import ProjectRepository, TeamRepository, UnitOfWork
 from taskboard.services.access import AccessPolicy
+from taskboard.services.caching import PROJECT_LIST_ADAPTER, CacheAside, CacheKeys
 from taskboard.services.security import Clock
 
 
@@ -23,6 +24,7 @@ class ProjectService:
         signing_keys: Callable[[UUID], str],
         clock: Clock,
         uow: UnitOfWork,
+        cache: CacheAside,
     ) -> None:
         self._projects = projects
         self._teams = teams
@@ -31,6 +33,7 @@ class ProjectService:
         self._signing_keys = signing_keys
         self._clock = clock
         self._uow = uow
+        self._cache = cache
 
     def redact(self, actor: User, projects: Sequence[Project]) -> list[Project]:
         """Show webhook URLs (which often embed secrets) and signing keys only to managers."""
@@ -51,9 +54,16 @@ class ProjectService:
         return result
 
     def list_my_projects(self, actor: User) -> Sequence[Project]:
-        return self.redact(
-            actor, self._projects.list_for_teams(self._teams.team_ids_for_user(actor.id))
+        projects = self._cache.get_or_load(
+            "user_projects",
+            CacheKeys.user_projects(actor.id),
+            PROJECT_LIST_ADAPTER,
+            lambda: list(self._projects.list_for_teams(self._teams.team_ids_for_user(actor.id))),
         )
+        return self.redact(actor, projects)
+
+    def _forget_team_lists(self, team_id: UUID) -> None:
+        self._cache.forget_user_projects(self._teams.member_ids(team_id))
 
     def list_team_projects(self, actor: User, team_id: UUID) -> Sequence[Project]:
         team = self._access.team_for_member(actor, team_id)
@@ -64,6 +74,7 @@ class ProjectService:
         url = self._url_policy.validate(webhook_url) if webhook_url else None
         project = self._projects.add(team.id, name.strip(), url)
         self._uow.commit()
+        self._forget_team_lists(team.id)
         return self.redact(actor, [project])[0]
 
     def get(self, actor: User, project_id: UUID) -> Project:
@@ -89,10 +100,12 @@ class ProjectService:
             clear_webhook=clear_webhook,
         )
         self._uow.commit()
+        self._forget_team_lists(updated.team_id)
         return self.redact(actor, [updated])[0]
 
     def archive(self, actor: User, project_id: UUID) -> Project:
         project = self._access.project_for_manager(actor, project_id)
         archived = self._projects.archive(project.id, self._clock.now())
         self._uow.commit()
+        self._forget_team_lists(archived.team_id)
         return self.redact(actor, [archived])[0]

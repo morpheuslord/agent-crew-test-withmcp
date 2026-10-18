@@ -1,0 +1,8 @@
+{
+  "tool": "mcp__sec-review__general_lightweight_security_review",
+  "arguments": {
+    "task_description": "Add a cache-aside layer to the Taskboard FastAPI API using Redis 7 (redis-py): cache a user's team list and project list, task lists per project per page/filter/sort combination, task detail and user profile. Every write invalidates the affected keys after the database commit (versioned keys for task-list families), TTLs are a backstop. Values are JSON. The cache sits behind an interface with Redis, in-memory and no-op implementations; on Redis errors it degrades to cache misses. Hit/miss counters are exposed on an admin-only stats endpoint and logged at debug level. Authorization checks always run against PostgreSQL before cached data is returned.",
+    "components": "database,authorization,serialization-and-parsing,logging-and-errors",
+    "technologies": "Python 3.13, FastAPI, redis-py, Redis 7, PostgreSQL 16"
+  }
+}

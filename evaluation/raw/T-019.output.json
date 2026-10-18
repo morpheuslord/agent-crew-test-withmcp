@@ -1,0 +1,58 @@
+{
+  "success": true,
+  "review_type": "ai_powered_security_review",
+  "instructions": "IMPORTANT: You (the AI agent) must now perform the security review. The code is not included here: review the code you just wrote, which is already in your context, using the checklist and focus areas. Report all security issues found with severity ratings and fixes.",
+  "review_prompt": "## SECURITY CODE REVIEW REQUEST\n\n**File:** `api/src/taskboard/services/caching.py, api/src/taskboard/infra/cache/`\n**Components:** database, authorization, serialization-and-parsing, logging-and-errors\n**Risk Level:** CRITICAL\n\n### Review Instructions\n\nReview the code you just wrote (it is already in your context) for security vulnerabilities. For each issue found:\n1. Identify the vulnerability type and severity (Critical/High/Medium/Low)\n2. Explain why it's a security risk\n3. Show the problematic code snippet\n4. Provide a secure code fix\n\n### Focus Areas\n\nPay special attention to:\n- Card numbers pass through or are stored in your servers and logs\n- A user calls an admin or other-role function because only the UI hides it\n- Attacker input changes the meaning of a database query\n- Untrusted data is deserialized with a format that can run code, such as pickle\n- Passwords are stored in plain text or with a fast hash, so a database leak exposes them\n- An uploaded archive writes files outside the target folder when extracted\n- A database, cache, or admin port is reachable from the internet\n- A request sets fields the user should not control, such as role or price\n- Query operators in user input bypass filters in a NoSQL database\n- One user reads or changes another user's data by changing an id in the request\n- A user grants themselves a higher role through a profile or signup request\n- Sensitive fields are stored unencrypted, so a backup or database leak exposes them\n\n### Security Checklist\n\nVerify each item and report violations:\n- [ ] Use the provider's hosted card fields: Let the payment provider collect card data directly so card numbers never touch your servers or logs.\n- [ ] Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies.\n- [ ] Check permissions on the server for every action: Enforce role and permission checks in a central layer on each endpoint, not only by hiding UI.\n- [ ] Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.\n- [ ] Do not deserialize untrusted data with code-executing formats: Use JSON with schema validation. Avoid pickle, yaml.load, and native object serialization for untrusted input.\n- [ ] Hash passwords with a slow, salted algorithm: Use Argon2id, scrypt, or bcrypt through your framework's password helper. Never use MD5 or SHA for passwords.\n- [ ] Extract archives safely: Ignore paths inside archives, reject symlinks and entries that escape the target folder, and cap size and file count.\n- [ ] Keep data stores off the public internet: Place databases and caches in private subnets, bind them to internal interfaces, and allow only the app through security groups.\n- [ ] Accept only the fields you expect: Bind requests to an explicit schema or DTO with allowed fields. Never copy a request body straight onto a model.\n- [ ] Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.\n- [ ] Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.\n- [ ] Encrypt sensitive data at rest: Use AES-GCM or your cloud provider's managed encryption, with keys held outside the database.\n- [ ] Scope every query to the tenant: Apply the tenant filter in one place, such as a query helper or row-level security, so no query can forget it.\n- [ ] Turn off external entities in XML parsers: Use a hardened parser configuration such as defusedxml, with DTDs and external entities disabled.\n- [ ] Give the app a least-privilege database account: Create a user limited to the tables and operations the app needs. Keep migrations on a separate admin account.\n- [ ] Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.\n- [ ] Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials.\n\n### Expected Response Format\n\nProvide your security review with:\n1. **Summary:** Overall assessment (Secure/Needs Attention/Insecure)\n2. **Findings:** List of security issues with severity and fixes\n3. **Checklist Results:** Which items pass/fail\n4. **Recommendations:** Prioritized list of actions",
+  "context": {
+    "file_path": "api/src/taskboard/services/caching.py, api/src/taskboard/infra/cache/",
+    "components": [
+      "database",
+      "authorization",
+      "serialization-and-parsing",
+      "logging-and-errors"
+    ],
+    "risk_level": "critical"
+  },
+  "security_checklist": [
+    "Use the provider's hosted card fields: Let the payment provider collect card data directly so card numbers never touch your servers or logs.",
+    "Keep secrets and personal data out of logs: Mask tokens, passwords, card numbers, and personal fields before logging, and avoid logging whole request bodies.",
+    "Check permissions on the server for every action: Enforce role and permission checks in a central layer on each endpoint, not only by hiding UI.",
+    "Use parameterized queries or an ORM: Pass user values as parameters. Never build SQL or query documents by joining strings.",
+    "Do not deserialize untrusted data with code-executing formats: Use JSON with schema validation. Avoid pickle, yaml.load, and native object serialization for untrusted input.",
+    "Hash passwords with a slow, salted algorithm: Use Argon2id, scrypt, or bcrypt through your framework's password helper. Never use MD5 or SHA for passwords.",
+    "Extract archives safely: Ignore paths inside archives, reject symlinks and entries that escape the target folder, and cap size and file count.",
+    "Keep data stores off the public internet: Place databases and caches in private subnets, bind them to internal interfaces, and allow only the app through security groups.",
+    "Accept only the fields you expect: Bind requests to an explicit schema or DTO with allowed fields. Never copy a request body straight onto a model.",
+    "Validate all input on the server: Check type, length, range, and format for every input on the server. Client-side checks are only for convenience.",
+    "Check the user owns the object on every request: Look the object up by id AND owner, or check ownership explicitly, and return 404 when they do not match.",
+    "Encrypt sensitive data at rest: Use AES-GCM or your cloud provider's managed encryption, with keys held outside the database.",
+    "Scope every query to the tenant: Apply the tenant filter in one place, such as a query helper or row-level security, so no query can forget it.",
+    "Turn off external entities in XML parsers: Use a hardened parser configuration such as defusedxml, with DTDs and external entities disabled.",
+    "Give the app a least-privilege database account: Create a user limited to the tables and operations the app needs. Keep migrations on a separate admin account.",
+    "Load secrets from a secrets manager or environment: Keep secrets out of code, images, and the repo. Use environment variables or a vault, scope access narrowly, and rotate anything that leaked.",
+    "Return generic errors to users: Show a short message and a request id, log the details server-side, and use the same wording for unknown and wrong credentials."
+  ],
+  "focus_areas": [
+    "Card numbers pass through or are stored in your servers and logs",
+    "A user calls an admin or other-role function because only the UI hides it",
+    "Attacker input changes the meaning of a database query",
+    "Untrusted data is deserialized with a format that can run code, such as pickle",
+    "Passwords are stored in plain text or with a fast hash, so a database leak exposes them",
+    "An uploaded archive writes files outside the target folder when extracted",
+    "A database, cache, or admin port is reachable from the internet",
+    "A request sets fields the user should not control, such as role or price",
+    "Query operators in user input bypass filters in a NoSQL database",
+    "One user reads or changes another user's data by changing an id in the request",
+    "A user grants themselves a higher role through a profile or signup request",
+    "Sensitive fields are stored unencrypted, so a backup or database leak exposes them"
+  ],
+  "expected_response": {
+    "format": "structured_security_review",
+    "required_sections": [
+      "overall_assessment",
+      "findings_list",
+      "checklist_results",
+      "recommended_fixes"
+    ]
+  }
+}

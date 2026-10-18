@@ -22,6 +22,7 @@ from taskboard.repositories.interfaces import (
     UnitOfWork,
     UserRepository,
 )
+from taskboard.services.caching import USER_ADAPTER, CacheAside, CacheKeys
 from taskboard.services.security import (
     Clock,
     PasswordHasher,
@@ -63,6 +64,7 @@ class AuthService:
         clock: Clock,
         uow: UnitOfWork,
         policy: AuthPolicy,
+        cache: CacheAside,
     ) -> None:
         self._users = users
         self._sessions = sessions
@@ -73,6 +75,7 @@ class AuthService:
         self._clock = clock
         self._uow = uow
         self._policy = policy
+        self._cache = cache
 
     def _throttle(self, scope: str, value: str, limit: int) -> None:
         key = limiter_key(scope, value)
@@ -134,8 +137,15 @@ class AuthService:
         return IssuedSession(token=token, expires_at=expires_at, user=user)
 
     def authenticate(self, token: str) -> User:
-        user = self._sessions.find_user(hash_token(token), self._clock.now())
-        if user is None:
+        # The session lookup always hits the database, so logout and revocation take effect at
+        # once; only the profile is cached (and invalidated on every profile change).
+        user_id = self._sessions.find_user_id(hash_token(token), self._clock.now())
+        if user_id is None:
+            raise AuthenticationRequiredError()
+        user = self._cache.get_or_load(
+            "user", CacheKeys.user(user_id), USER_ADAPTER, lambda: self._users.get(user_id)
+        )
+        if user is None or not user.is_active:
             raise AuthenticationRequiredError()
         return user
 

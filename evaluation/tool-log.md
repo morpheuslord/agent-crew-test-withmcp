@@ -179,6 +179,17 @@ Times are UTC from `date -u` at the time of the entry.
 - Changes: api/ (baseline 20eda4e)
 - Notes: none
 
+### T-017 | 2026-10-18T07:30Z | phase 4
+- Source: MCP sec-review/general_lightweight_security_review
+- Why: Server workflow step 1 before writing the cache layer.
+- Input: evaluation/raw/T-017.input.json (components `database,authorization,serialization-and-parsing,logging-and-errors`)
+- Output: evaluation/raw/T-017.output.json. Summary: risk `critical`, 18 threats, 17 countermeasures.
+- Interpretation: The one new requirement relevant to caching is `unsafe-deserialization` (critical): cache values must not use pickle or other code-executing formats, so values are JSON via Pydantic `TypeAdapter`. Most of the rest repeats earlier entries. I believe several entries do not apply to this task: `card-data-in-your-systems`/`hosted-payment-fields` (no payments, as in T-010), `weak-password-storage`, `archive-path-traversal` and `xxe` (the cache layer touches no passwords, archives or XML). The threat list did not tie itself to the components I gave, so it reads as a generic list for the component set.
+- Findings: F-084
+- Action: applied (JSON-only cache values)
+- Changes: api/ cache layer (commit filled in below)
+- Notes: Logged after T-018 in time order. The call was made before the user's Codacy message arrived, and the T-018 work was done in between.
+
 ### T-018 | 2026-10-18T07:35Z | phase 4
 - Source: Self (user relayed the Codacy workflow log and asked for the Codacy configuration to be corrected)
 - Why: Upload step log: many `Calculated fingerprint ... but found existing inconsistent fingerprint value` warnings (docs/DECISIONS.md, .github/workflows/codacy.yml, api/src/taskboard/__init__.py), then `Error: Code Scanning could not process the submitted SARIF file: rejecting SARIF, as there are more runs than allowed (24 > 20)`. The user wrote: "the entire codacy config needs corrections".
@@ -189,3 +200,14 @@ Times are UTC from `date -u` at the time of the entry.
 - Action: applied
 - Changes: .github/workflows/codacy.yml, .codacy.yml, docs/DECISIONS.md (ADR-017), evaluation/suppressions.md, evaluation/session-meta.md (8e90f68)
 - Notes: This deviates from the brief's section 10 at the user's explicit instruction. I did not read any scanner results; the log came from the user.
+
+### T-019 | 2026-10-18T07:55Z | phase 4
+- Source: MCP sec-review/general_verify_code_security
+- Why: Server workflow step 3 for the cache layer, with T-017's components.
+- Input: evaluation/raw/T-019.input.json
+- Output: evaluation/raw/T-019.output.json. Summary: a review prompt, a 17-item checklist and 12 focus areas; no findings of its own.
+- Interpretation: Following the prompt I reviewed the cache code and its call sites; the review is in evaluation/raw/T-019.review.md: "Needs Attention". R19-1 (medium): a cache-aside race can keep a demoted admin's role for up to the TTL, because `authenticate()` took `role` and `is_active` from the cached profile. That contradicts the T-003 threat-model mitigation TM-14 ("Authorization runs against the database before any cache read"), which my implementation did not meet. R19-2 is an accepted low risk. R19-3 and R19-4 are low and handled in Terraform.
+- Findings: F-080, F-081, F-082, F-083
+- Action: applied (F-080 fixed; F-081 accepted; F-082/F-083 in phase 6)
+- Changes: see findings
+- Notes: The checklist again lists the payment, archive and XML items that do not apply.

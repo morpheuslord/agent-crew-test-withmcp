@@ -36,6 +36,12 @@ def update_user(
     return UserOut.model_validate(updated)
 
 
+@router.get("/cache/stats")
+def cache_stats(services: Services, user: CurrentUser) -> dict[str, object]:
+    """Hit, miss and error counters per cache key family, for this API process."""
+    return services.user_admin.cache_stats(user)
+
+
 @router.get("/activity")
 def global_activity(
     paging: Annotated[PageParams, Query()], services: Services, user: CurrentUser

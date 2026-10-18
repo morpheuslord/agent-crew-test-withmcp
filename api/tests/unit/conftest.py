@@ -6,12 +6,15 @@ import pytest
 
 from taskboard.domain.entities import User
 from taskboard.domain.enums import Role
+from taskboard.infra.cache.backends import InMemoryCache
+from taskboard.infra.cache.base import CacheStats
 from taskboard.infra.rate_limit import InMemoryRateLimiter
 from taskboard.infra.webhooks.url_policy import WebhookUrlPolicy
 from taskboard.services.access import AccessPolicy
 from taskboard.services.activity import ActivityService
 from taskboard.services.attachments import AttachmentService
 from taskboard.services.auth import AuthPolicy, AuthService
+from taskboard.services.caching import CacheAside
 from taskboard.services.comments import CommentService
 from taskboard.services.export import CsvExporter
 from taskboard.services.projects import ProjectService
@@ -75,6 +78,7 @@ class World:
     attachments: AttachmentService
     activity: ActivityService
     exporter: CsvExporter
+    cache: CacheAside
 
     def user(self, name: str, role: Role = Role.MEMBER) -> User:
         return self.users.add(f"{name}@example.test", name.title(), "hashed:pw", role)
@@ -99,6 +103,7 @@ def world() -> World:
     access = AccessPolicy(teams_repo, projects_repo, tasks_repo)
     activity = ActivityService(FakeActivity(store), access)
     policy = WebhookUrlPolicy(allow_http=False, allow_private=False, resolver=public_resolver)
+    cache = CacheAside(InMemoryCache(), CacheStats(), 300)
     return World(
         store=store,
         clock=clock,
@@ -119,9 +124,10 @@ def world() -> World:
             clock=clock,
             uow=uow,
             policy=POLICY,
+            cache=cache,
         ),
-        admin=UserAdminService(users=users, sessions=sessions, access=access, uow=uow),
-        provisioner=AdminProvisioner(users, hasher, uow),
+        admin=UserAdminService(users=users, sessions=sessions, access=access, uow=uow, cache=cache),
+        provisioner=AdminProvisioner(users, hasher, uow, cache),
         teams=TeamService(
             teams=teams_repo,
             projects=projects_repo,
@@ -129,6 +135,7 @@ def world() -> World:
             access=access,
             activity=activity,
             uow=uow,
+            cache=cache,
         ),
         projects=ProjectService(
             projects=projects_repo,
@@ -138,6 +145,7 @@ def world() -> World:
             signing_keys=lambda project_id: f"key-{project_id}",
             clock=clock,
             uow=uow,
+            cache=cache,
         ),
         tasks=TaskService(
             tasks=tasks_repo,
@@ -149,6 +157,7 @@ def world() -> World:
             notifier=notifier,
             clock=clock,
             uow=uow,
+            cache=cache,
         ),
         comments=CommentService(
             comments=FakeComments(store), access=access, activity=activity, uow=uow
@@ -163,4 +172,5 @@ def world() -> World:
         ),
         activity=activity,
         exporter=CsvExporter(tasks=tasks_repo, teams=teams_repo, access=access),
+        cache=cache,
     )

@@ -16,6 +16,7 @@ from taskboard.repositories.interfaces import (
 from taskboard.services.access import AccessPolicy
 from taskboard.services.activity import ActivityService
 from taskboard.services.auth import normalize_email
+from taskboard.services.caching import TEAM_LIST_ADAPTER, CacheAside, CacheKeys
 
 
 class TeamService:
@@ -28,6 +29,7 @@ class TeamService:
         access: AccessPolicy,
         activity: ActivityService,
         uow: UnitOfWork,
+        cache: CacheAside,
     ) -> None:
         self._teams = teams
         self._projects = projects
@@ -35,13 +37,20 @@ class TeamService:
         self._access = access
         self._activity = activity
         self._uow = uow
+        self._cache = cache
 
     def list_my_teams(self, actor: User) -> Sequence[Team]:
-        return self._teams.list_for_user(actor.id)
+        return self._cache.get_or_load(
+            "user_teams",
+            CacheKeys.user_teams(actor.id),
+            TEAM_LIST_ADAPTER,
+            lambda: list(self._teams.list_for_user(actor.id)),
+        )
 
     def create_team(self, actor: User, name: str) -> Team:
         team = self._teams.add(name.strip(), actor.id)
         self._uow.commit()
+        self._cache.forget_user_teams([actor.id])
         return team
 
     def get_team(self, actor: User, team_id: UUID) -> TeamDetail:
@@ -75,6 +84,7 @@ class TeamService:
         )
         member = next(m for m in self._teams.list_members(team.id) if m.user_id == user.id)
         self._uow.commit()
+        self._forget_membership(user.id)
         return member
 
     def remove_member(self, actor: User, team_id: UUID, user_id: UUID) -> None:
@@ -91,3 +101,8 @@ class TeamService:
             details={"user_id": str(user_id), "display_name": user.display_name},
         )
         self._uow.commit()
+        self._forget_membership(user_id)
+
+    def _forget_membership(self, user_id: UUID) -> None:
+        self._cache.forget_user_teams([user_id])
+        self._cache.forget_user_projects([user_id])

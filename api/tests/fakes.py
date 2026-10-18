@@ -142,12 +142,11 @@ class FakeSessions:
     def add(self, user_id: UUID, token_hash: str, expires_at: datetime) -> None:
         self.s.sessions[token_hash] = (user_id, expires_at)
 
-    def find_user(self, token_hash: str, now: datetime) -> User | None:
+    def find_user_id(self, token_hash: str, now: datetime) -> UUID | None:
         entry = self.s.sessions.get(token_hash)
         if entry is None or entry[1] <= now:
             return None
-        user = self.s.users.get(entry[0])
-        return user if user and user.is_active else None
+        return entry[0]
 
     def delete(self, token_hash: str) -> None:
         self.s.sessions.pop(token_hash, None)

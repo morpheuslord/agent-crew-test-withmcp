@@ -83,17 +83,12 @@ class SqlSessionRepository:
         self._s.add(SessionRow(user_id=user_id, token_hash=token_hash, expires_at=expires_at))
         self._s.flush()
 
-    def find_user(self, token_hash: str, now: datetime) -> User | None:
-        row = self._s.scalar(
-            select(UserRow)
-            .join(SessionRow, SessionRow.user_id == UserRow.id)
-            .where(
-                SessionRow.token_hash == token_hash,
-                SessionRow.expires_at > now,
-                UserRow.is_active.is_(True),
+    def find_user_id(self, token_hash: str, now: datetime) -> UUID | None:
+        return self._s.scalar(
+            select(SessionRow.user_id).where(
+                SessionRow.token_hash == token_hash, SessionRow.expires_at > now
             )
         )
-        return to_user(row) if row else None
 
     def delete(self, token_hash: str) -> None:
         self._s.execute(delete(SessionRow).where(SessionRow.token_hash == token_hash))

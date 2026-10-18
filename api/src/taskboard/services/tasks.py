@@ -15,7 +15,7 @@ from taskboard.domain.entities import (
     User,
 )
 from taskboard.domain.enums import ActivityType
-from taskboard.domain.errors import ValidationFailedError
+from taskboard.domain.errors import NotFoundError, ValidationFailedError
 from taskboard.infra.storage.base import AttachmentStorage
 from taskboard.infra.webhooks.notifier import WebhookNotifier
 from taskboard.repositories.interfaces import (
@@ -26,6 +26,7 @@ from taskboard.repositories.interfaces import (
 )
 from taskboard.services.access import AccessPolicy
 from taskboard.services.activity import ActivityService
+from taskboard.services.caching import TASK_ADAPTER, TASK_PAGE_ADAPTER, CacheAside, CacheKeys
 from taskboard.services.security import Clock
 
 logger = logging.getLogger("taskboard.tasks")
@@ -44,6 +45,7 @@ class TaskService:
         notifier: WebhookNotifier,
         clock: Clock,
         uow: UnitOfWork,
+        cache: CacheAside,
     ) -> None:
         self._tasks = tasks
         self._teams = teams
@@ -54,6 +56,7 @@ class TaskService:
         self._notifier = notifier
         self._clock = clock
         self._uow = uow
+        self._cache = cache
 
     def _check_assignee(self, project: Project, assignee_id: UUID | None) -> None:
         if assignee_id is not None and not self._teams.is_member(project.team_id, assignee_id):
@@ -61,7 +64,13 @@ class TaskService:
 
     def list_project_tasks(self, actor: User, project_id: UUID, flt: TaskFilter) -> Page[Task]:
         project = self._access.project_for_member(actor, project_id)
-        return self._tasks.search(flt, team_ids=None, project_id=project.id)
+        version = self._cache.task_list_version(project.id)
+        return self._cache.get_or_load(
+            "task_list",
+            CacheKeys.task_list(project.id, version, flt),
+            TASK_PAGE_ADAPTER,
+            lambda: self._tasks.search(flt, team_ids=None, project_id=project.id),
+        )
 
     def search(self, actor: User, flt: TaskFilter) -> Page[Task]:
         return self._tasks.search(flt, team_ids=self._access.visible_team_ids(actor))
@@ -91,10 +100,21 @@ class TaskService:
             details={"title": task.title},
         )
         self._uow.commit()
+        self._cache.forget_task_lists(project.id)
         return task
 
     def get(self, actor: User, task_id: UUID) -> Task:
-        task, _ = self._access.task_for_member(actor, task_id)
+        task = self._cache.get_or_load(
+            "task", CacheKeys.task(task_id), TASK_ADAPTER, lambda: self._tasks.get(task_id)
+        )
+        if task is None:
+            raise NotFoundError("Task")
+        # A task never moves between projects, so the cached project id is safe to authorize
+        # with; membership itself is always checked against the database.
+        try:
+            self._access.project_for_member(actor, task.project_id)
+        except NotFoundError:
+            raise NotFoundError("Task") from None
         return task
 
     def update(self, actor: User, task_id: UUID, changes: TaskChanges) -> Task:
@@ -127,6 +147,8 @@ class TaskService:
                 },
             )
         self._uow.commit()
+        self._cache.forget_task(task.id)
+        self._cache.forget_task_lists(project.id)
         if status_changed and project.webhook_url:
             self._notifier.notify(
                 project.webhook_url,
@@ -142,10 +164,12 @@ class TaskService:
         return updated
 
     def delete(self, actor: User, task_id: UUID) -> Task:
-        task, _ = self._access.task_for_writer(actor, task_id)
+        task, project = self._access.task_for_writer(actor, task_id)
         keys = [a.storage_key for a in self._attachments.list_for_task(task.id)]
         self._tasks.delete(task.id)
         self._uow.commit()
+        self._cache.forget_task(task.id)
+        self._cache.forget_task_lists(project.id)
         for key in keys:
             try:
                 self._storage.delete(key)
