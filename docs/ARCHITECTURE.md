@@ -65,9 +65,11 @@ Layering inside each service:
   are frozen dataclasses in `domain`, and domain errors are typed exceptions in `domain/errors.py`, mapped to HTTP
   responses in one exception handler module. All wiring happens in `composition.py`, and routers get services
   through FastAPI `Depends`.
-- **UI**: `ApiClient` (the only code that calls the API) → controllers (one class per area) → view-model builders →
-  EJS views. Middleware classes handle request ids, logging, sessions, CSRF, flash messages and errors. Wiring
-  happens in `src/composition.ts`.
+- **UI**: `HttpApiClient` (implements the `TaskboardApi` interface; the only code that calls the API) → controller
+  classes (one per area, `src/controllers/`) → `ViewModels` (grouping, Markdown rendering, activity text) → EJS views
+  (`views/`). Middleware classes handle request ids and access logs, sessions, CSRF, flash messages and errors.
+  Wiring happens in `createApp` in `src/app.ts`, which takes the API client as a dependency, so tests swap in an
+  in-memory fake. The UI ships no client-side JavaScript at all.
 
 Every log line in both services is JSON and carries the request id. The UI generates a UUID per incoming request and
 sends it to the API as `X-Request-ID`; the API accepts it if it matches a strict pattern, otherwise generates its own.
@@ -105,9 +107,16 @@ sequenceDiagram
 - **The UI proves it is the UI.** Every API request except `/healthz` and `/readyz` must carry `X-Service-Token`,
   a shared secret compared in constant time. This keeps other workloads on the internal network from using the API
   even if they obtain a user token, and lets the API trust `X-Client-IP` for rate limiting.
-- **CSRF.** The UI sets an `HttpOnly` random `tb_csrf` cookie and embeds `HMAC-SHA256(COOKIE_SECRET, cookie value)`
-  in every form as `_csrf`. Every POST is checked in middleware before any controller runs. Session cookies are also
-  `SameSite=Lax`.
+- **CSRF.** The UI sets an `HttpOnly` random `tb_csrf` cookie and embeds `HMAC-SHA256(k_csrf, cookie value)` in every
+  form as `_csrf`, where `k_csrf` is derived from `COOKIE_SECRET` and is different from the key used to sign flash
+  cookies (F-087). Every POST is checked in middleware before any controller runs. The single multipart route (uploads)
+  is checked right after multer parses it, and multipart bodies on any other route are refused. Requests whose
+  `Sec-Fetch-Site` is `cross-site` are refused. Session cookies are also `SameSite=Lax`.
+- **Cookies.** With `COOKIE_SECURE=true` (production) the cookie names carry the `__Host-` prefix, so the browser only
+  accepts them with `Secure`, `Path=/` and no `Domain`. A sibling subdomain therefore cannot plant a session or CSRF
+  cookie.
+- **Proxy hops.** The UI reads the client IP from `X-Forwarded-For` only for the `TRUST_PROXY_HOPS` proxies in front of
+  it: 1 behind the ALB, 0 in Compose. It forwards that IP to the API as `X-Client-IP` for rate limiting (F-088).
 - **Passwords** are hashed with Argon2id (`argon2-cffi` defaults). Length 12 to 128 characters, no composition rules.
 - **Password reset.** `POST /auth/password/forgot` always answers `202` with the same body. For an active account it
   creates a `secrets.token_urlsafe(32)` token, stores its SHA-256 with a 30-minute expiry, and "sends" an email whose
