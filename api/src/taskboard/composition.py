@@ -1,8 +1,10 @@
 """Composition root: the only place that chooses concrete implementations."""
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cached_property
+from uuid import UUID
 
 import boto3
 import redis
@@ -55,6 +57,7 @@ class Infrastructure:
     session_factory: sessionmaker[Session]
     storage: AttachmentStorage
     notifier: WebhookNotifier
+    webhook_keys: Callable[[UUID], str]
     url_policy: WebhookUrlPolicy
     limiter: RateLimiter
     hasher: PasswordHasher
@@ -128,6 +131,7 @@ def build_infrastructure(settings: Settings) -> Infrastructure:
         session_factory=sessionmaker(engine, expire_on_commit=False),
         storage=build_storage(settings),
         notifier=notifier,
+        webhook_keys=notifier.signing_key_for,
         url_policy=url_policy,
         limiter=limiter,
         hasher=Argon2PasswordHasher(),
@@ -210,6 +214,7 @@ class RequestServices:
             teams=self.teams_repo,
             access=self.access,
             url_policy=self._infra.url_policy,
+            signing_keys=self._infra.webhook_keys,
             clock=self._infra.clock,
             uow=self.uow,
         )

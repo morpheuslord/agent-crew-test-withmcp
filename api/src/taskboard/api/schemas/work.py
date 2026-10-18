@@ -70,6 +70,7 @@ class ProjectOut(ResponseModel):
     team_id: UUID
     name: str
     webhook_url: str | None
+    webhook_signing_key: str | None
     archived_at: datetime | None
     is_archived: bool
     created_at: datetime

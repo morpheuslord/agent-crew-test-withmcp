@@ -85,7 +85,9 @@ Short ADR-style records. "Driven by" says where the decision came from: the brie
 
 - **Decision:** `HttpWebhookNotifier` submits deliveries to a bounded `ThreadPoolExecutor`: 3 attempts, 3-second
   timeouts, no redirects, TLS verified. Only `https` targets, with every resolved address checked against
-  non-public ranges and the connection pinned to the checked address. Bodies are HMAC-signed.
+  non-public ranges and the connection pinned to the checked address. Bodies are HMAC-signed with a per-project key
+  derived from `WEBHOOK_SIGNING_SECRET` and shown only to the project's owner and admins (F-077). At most 500
+  deliveries are pending (F-072), and each attempt has an overall deadline (F-073).
 - **Reason:** The brief requires asynchronous, best-effort delivery with a short retry. A thread pool needs no extra
   infrastructure. Project owners choose the URLs, so the API must not become an SSRF proxy into the VPC or to the
   EC2 metadata service.

@@ -71,6 +71,8 @@ class Project:
     archived_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # Set only in responses to the team owner and admins, when a webhook is configured.
+    webhook_signing_key: str | None = None
 
     @property
     def is_archived(self) -> bool:

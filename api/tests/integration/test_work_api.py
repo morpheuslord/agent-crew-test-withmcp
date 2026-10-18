@@ -1,6 +1,8 @@
 """Teams, projects, tasks, comments, attachments, search, export and webhooks, end to end."""
 
 import csv
+import hashlib
+import hmac
 import io
 import json
 import threading
@@ -309,7 +311,10 @@ def test_webhook_fires_on_status_change(settings: Settings, tmp_path: Path, rece
     assert payload["old_status"] == "todo"
     assert payload["new_status"] == "done"
     assert payload["actor_id"] == w["member"]["id"]
-    assert _Receiver.received[0]["headers"]["X-Taskboard-Signature"].startswith("sha256=")
+    key = hooked.json()["webhook_signing_key"]
+    raw = json.dumps(payload, separators=(",", ":")).encode()
+    expected = "sha256=" + hmac.new(key.encode(), raw, hashlib.sha256).hexdigest()
+    assert _Receiver.received[0]["headers"]["X-Taskboard-Signature"] == expected
 
 
 def test_webhook_url_must_be_public_https(api: Api) -> None:

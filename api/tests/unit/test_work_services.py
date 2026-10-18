@@ -62,8 +62,14 @@ def test_admin_sees_every_team(world: World) -> None:
 
 def test_webhook_url_hidden_from_non_owners(world: World) -> None:
     owner, member, _, team_id, project_id = _setup(world)
-    assert world.projects.get(owner, project_id).webhook_url is not None
-    assert world.projects.get(member, project_id).webhook_url is None
+    owner_view = world.projects.get(owner, project_id)
+    assert owner_view.webhook_url is not None
+    assert owner_view.webhook_signing_key == f"key-{project_id}"
+    member_view = world.projects.get(member, project_id)
+    assert member_view.webhook_url is None
+    assert member_view.webhook_signing_key is None
+    admin_view = world.projects.get(world.user("root", Role.ADMIN), project_id)
+    assert admin_view.webhook_signing_key == f"key-{project_id}"
     assert all(p.webhook_url is None for p in world.projects.list_my_projects(member))
     assert all(p.webhook_url is None for p in world.projects.list_team_projects(member, team_id))
     assert all(p.webhook_url is None for p in world.teams.get_team(member, team_id).projects)

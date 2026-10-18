@@ -9,6 +9,7 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Final, Protocol
+from uuid import UUID
 
 import httpx
 
@@ -20,6 +21,15 @@ from taskboard.logging_setup import request_id_var
 logger = logging.getLogger("taskboard.webhooks")
 
 MAX_RESPONSE_BYTES: Final = 64 * 1024
+
+
+def project_signing_key(secret: bytes, project_id: UUID) -> str:
+    """Per-project key derived from the deployment secret.
+
+    Each receiver gets a key that verifies only its own project's events, so it cannot forge events
+    for other projects, and the deployment secret itself is never handed out.
+    """
+    return hmac.new(secret, f"project:{project_id}".encode(), hashlib.sha256).hexdigest()
 
 
 class WebhookNotifier(Protocol):
@@ -79,15 +89,20 @@ class HttpWebhookNotifier:
     def shutdown(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
 
-    def sign(self, body: bytes) -> str:
-        return "sha256=" + hmac.new(self._secret, body, hashlib.sha256).hexdigest()
+    def signing_key_for(self, project_id: UUID) -> str:
+        return project_signing_key(self._secret, project_id)
+
+    @staticmethod
+    def sign(body: bytes, key: str) -> str:
+        return "sha256=" + hmac.new(key.encode(), body, hashlib.sha256).hexdigest()
 
     def _deliver(self, url: str, event: StatusChangedEvent, request_id: str) -> None:
         token = request_id_var.set(request_id)
         try:
             body = json.dumps(event.to_payload(), separators=(",", ":")).encode()
+            key = self.signing_key_for(event.project_id)
             for attempt in range(1, self._max_attempts + 1):
-                if self._attempt(url, body, attempt):
+                if self._attempt(url, body, key, attempt):
                     return
                 if attempt < self._max_attempts:
                     time.sleep(self._backoff * 2 ** (attempt - 1))
@@ -95,7 +110,7 @@ class HttpWebhookNotifier:
         finally:
             request_id_var.reset(token)
 
-    def _attempt(self, url: str, body: bytes, attempt: int) -> bool:
+    def _attempt(self, url: str, body: bytes, key: str, attempt: int) -> bool:
         try:
             target = self._policy.resolve(url)
         except ValidationFailedError as exc:
@@ -105,7 +120,7 @@ class HttpWebhookNotifier:
             "Host": target.host_header,
             "Content-Type": "application/json",
             "User-Agent": "Taskboard-Webhook/1.0",
-            "X-Taskboard-Signature": self.sign(body),
+            "X-Taskboard-Signature": self.sign(body, key),
         }
         extensions = {"sni_hostname": target.host} if target.scheme == "https" else {}
         try:

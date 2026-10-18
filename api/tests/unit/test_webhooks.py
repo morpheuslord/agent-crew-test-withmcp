@@ -16,7 +16,11 @@ import pytest
 from taskboard.domain.entities import StatusChangedEvent
 from taskboard.domain.enums import TaskStatus
 from taskboard.domain.errors import ValidationFailedError
-from taskboard.infra.webhooks.notifier import HttpWebhookNotifier, NullWebhookNotifier
+from taskboard.infra.webhooks.notifier import (
+    HttpWebhookNotifier,
+    NullWebhookNotifier,
+    project_signing_key,
+)
 from taskboard.infra.webhooks.url_policy import ResolvedTarget, WebhookUrlPolicy, system_resolver
 
 SECRET = b"s" * 32
@@ -166,8 +170,11 @@ def test_delivery_posts_signed_payload_to_pinned_address() -> None:
     assert request.extensions["sni_hostname"] == "hooks.example.test"
     body = request.content
     assert json.loads(body) == event.to_payload()
-    expected = "sha256=" + hmac.new(SECRET, body, hashlib.sha256).hexdigest()
+    key = project_signing_key(SECRET, event.project_id)
+    expected = "sha256=" + hmac.new(key.encode(), body, hashlib.sha256).hexdigest()
     assert request.headers["x-taskboard-signature"] == expected
+    other_key = project_signing_key(SECRET, uuid4())
+    assert other_key != key
 
 
 def test_delivery_retries_then_gives_up_without_following_redirects() -> None:

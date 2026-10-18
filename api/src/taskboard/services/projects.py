@@ -1,6 +1,6 @@
 """Projects: creation, renaming, webhook configuration and archiving."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import replace
 from uuid import UUID
 
@@ -20,6 +20,7 @@ class ProjectService:
         teams: TeamRepository,
         access: AccessPolicy,
         url_policy: WebhookUrlPolicy,
+        signing_keys: Callable[[UUID], str],
         clock: Clock,
         uow: UnitOfWork,
     ) -> None:
@@ -27,21 +28,26 @@ class ProjectService:
         self._teams = teams
         self._access = access
         self._url_policy = url_policy
+        self._signing_keys = signing_keys
         self._clock = clock
         self._uow = uow
 
     def redact(self, actor: User, projects: Sequence[Project]) -> list[Project]:
-        """Hide webhook URLs (which often embed secrets) from anyone but owners and admins."""
-        if actor.is_admin:
-            return list(projects)
-        owners: dict[UUID, bool] = {}
+        """Show webhook URLs (which often embed secrets) and signing keys only to managers."""
+        managers: dict[UUID, bool] = {}
         result = []
         for project in projects:
-            if project.team_id not in owners:
+            if project.team_id not in managers:
                 team = self._teams.get(project.team_id)
-                owners[project.team_id] = team is not None and team.owner_id == actor.id
-            visible = owners[project.team_id]
-            result.append(project if visible else replace(project, webhook_url=None))
+                managers[project.team_id] = actor.is_admin or (
+                    team is not None and team.owner_id == actor.id
+                )
+            if not managers[project.team_id]:
+                result.append(replace(project, webhook_url=None, webhook_signing_key=None))
+            elif project.webhook_url:
+                result.append(replace(project, webhook_signing_key=self._signing_keys(project.id)))
+            else:
+                result.append(project)
         return result
 
     def list_my_projects(self, actor: User) -> Sequence[Project]:
@@ -58,7 +64,7 @@ class ProjectService:
         url = self._url_policy.validate(webhook_url) if webhook_url else None
         project = self._projects.add(team.id, name.strip(), url)
         self._uow.commit()
-        return project
+        return self.redact(actor, [project])[0]
 
     def get(self, actor: User, project_id: UUID) -> Project:
         return self.redact(actor, [self._access.project_for_member(actor, project_id)])[0]
@@ -83,10 +89,10 @@ class ProjectService:
             clear_webhook=clear_webhook,
         )
         self._uow.commit()
-        return updated
+        return self.redact(actor, [updated])[0]
 
     def archive(self, actor: User, project_id: UUID) -> Project:
         project = self._access.project_for_manager(actor, project_id)
         archived = self._projects.archive(project.id, self._clock.now())
         self._uow.commit()
-        return archived
+        return self.redact(actor, [archived])[0]

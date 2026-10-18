@@ -306,7 +306,10 @@ The URL is checked when it is saved and again before every attempt. Only `https`
 loopback, private, link-local (including `169.254.169.254`), CGNAT, multicast or reserved ranges. The request goes to
 the validated address with the original `Host` header and TLS SNI, so a DNS answer cannot change between check and
 connect. Redirects are not followed, TLS certificates are always verified, and at most 64 KiB of the response is
-read. Each request carries `X-Taskboard-Signature: sha256=<HMAC of the body>` keyed by `WEBHOOK_SIGNING_SECRET`.
+read. Each request carries `X-Taskboard-Signature: sha256=<HMAC-SHA256 of the body>`, keyed by a per-project key
+derived as `HMAC-SHA256(WEBHOOK_SIGNING_SECRET, "project:<project id>")`. The project's owner and admins see that key
+(`webhook_signing_key`) in project responses and give it to their receiver. A receiver can verify its own project's
+events but cannot forge events for any other project (F-077).
 
 ## Attachments
 

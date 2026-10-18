@@ -135,6 +135,7 @@ def world() -> World:
             teams=teams_repo,
             access=access,
             url_policy=policy,
+            signing_keys=lambda project_id: f"key-{project_id}",
             clock=clock,
             uow=uow,
         ),
