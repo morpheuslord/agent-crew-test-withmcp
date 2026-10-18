@@ -120,7 +120,8 @@ Short ADR-style records. "Driven by" says where the decision came from: the brie
 ## ADR-014: API naming adjustments
 
 - **Decision:** All endpoints from brief 4.7 are kept as written. Added `GET /api/v1/admin/cache/stats`. The OpenAPI
-  document is served at `/api/v1/openapi.json`. Interactive docs appear only when `ENABLE_DOCS=true`.
+  document is served at `/api/v1/openapi.json`, behind the service token like every other `/api/v1` route (F-071).
+  There is no interactive docs UI.
 - **Reason:** Keeps the contract stable and versioned, with no debug surfaces by default.
 - **Driven by:** Brief 4.7; sec-review T-002 (`disable-debug-in-prod`).
 

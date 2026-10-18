@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI
 
@@ -32,8 +33,9 @@ def create_app(settings: Settings | None = None, infra: Infrastructure | None = 
     app = FastAPI(
         title="Taskboard API",
         version=__version__,
-        openapi_url=f"{API_PREFIX}/openapi.json",
-        docs_url=f"{API_PREFIX}/docs" if settings.enable_docs else None,
+        # The OpenAPI document is served below, behind service authentication; no docs UI.
+        openapi_url=None,
+        docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
     )
@@ -42,6 +44,11 @@ def create_app(settings: Settings | None = None, infra: Infrastructure | None = 
     v1 = APIRouter(prefix=API_PREFIX, dependencies=[Depends(require_service_auth)])
     for module in (auth, teams, projects, tasks, admin):
         v1.include_router(module.router)
+
+    @v1.get("/openapi.json", include_in_schema=False)
+    def openapi_document() -> dict[str, Any]:
+        return app.openapi()
+
     app.include_router(v1)
     app.include_router(health.router)
 

@@ -238,8 +238,8 @@ membership events.
 
 ## API contract
 
-The API is versioned under `/api/v1`. FastAPI generates the OpenAPI document (`/api/v1/openapi.json`, plus
-interactive docs when `ENABLE_DOCS=true`). The endpoint list matches section 4.7 of the brief, plus
+The API is versioned under `/api/v1`. FastAPI generates the OpenAPI document, served at `/api/v1/openapi.json`
+behind the service token like every other `/api/v1` route; there is no interactive docs UI. The endpoint list matches section 4.7 of the brief, plus
 `GET /api/v1/admin/cache/stats` (admin only) for cache counters. Conventions:
 
 - JSON bodies validated by Pydantic models with `extra="forbid"`; unknown fields are a `422`.

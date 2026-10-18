@@ -173,3 +173,10 @@ def test_admin_user_management(
         "PATCH", f"/admin/users/{me['id']}", admin_token, json={"role": "member"}
     )
     assert self_demote.status_code == 422
+
+
+def test_openapi_document_requires_service_token(api: Api) -> None:
+    assert api.client.get("/api/v1/openapi.json").status_code == 401
+    assert api.client.get("/api/v1/docs").status_code == 401
+    document = api.call("GET", "/openapi.json").json()
+    assert "/api/v1/search/tasks" in document["paths"]

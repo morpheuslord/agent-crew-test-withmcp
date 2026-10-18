@@ -52,8 +52,6 @@ class Settings(BaseSettings):
     webhook_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     webhook_max_attempts: int = Field(default=3, ge=1, le=5)
 
-    enable_docs: bool = False
-
     login_max_failures: int = Field(default=5, ge=1)
     login_max_account_failures: int = Field(default=50, ge=1)
     login_max_attempts_per_ip: int = Field(default=20, ge=1)
